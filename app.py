@@ -257,6 +257,9 @@ def listar_notas():
     return render_template("listar_notas.html", notas=lista_notas, turmas=lista_turmas, turma_id=turma_id)
 
 
+import os
+
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
