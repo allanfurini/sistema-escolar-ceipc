@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box">
+    <h2>Painel inicial</h2>
+    <p><strong>Total de alunos:</strong> {{ total_alunos }}</p>
+    <p><strong>Total de turmas:</strong> {{ total_turmas }}</p>
+    <p><strong>Total de disciplinas:</strong> {{ total_disciplinas }}</p>
+    <p><strong>Total de notas lançadas:</strong> {{ total_notas }}</p>
+</div>
+
+<div class="box">
+    <h3>Ordem recomendada</h3>
+    <p>1. Cadastre as turmas</p>
+    <p>2. Cadastre os alunos</p>
+    <p>3. Cadastre as disciplinas</p>
+    <p>4. Lance as notas</p>
+    <p class="muted">Depois vamos adicionar boletim parecido com o modelo antigo.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box">
+    <h2>Cadastrar Disciplina</h2>
+    <form method="POST">
+        <label>Nome da disciplina</label>
+        <input type="text" name="nome" placeholder="Ex.: Matemática" required>
+        <button type="submit">Salvar disciplina</button>
+    </form>
+</div>
+
+<div class="box">
+    <h2>Disciplinas cadastradas</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+        </tr>
+        {% for disciplina in disciplinas %}
+        <tr>
+            <td>{{ disciplina.id }}</td>
+            <td>{{ disciplina.nome }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

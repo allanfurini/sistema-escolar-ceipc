@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box">
+    <h2>Notas lançadas</h2>
+
+    <form method="GET">
+        <label>Filtrar por turma</label>
+        <select name="turma_id">
+            <option value="">Todas as turmas</option>
+            {% for turma in turmas %}
+            <option value="{{ turma.id }}" {% if turma_id == turma.id|string %}selected{% endif %}>
+                {{ turma.nome }} - {{ turma.serie }} - {{ turma.turno }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Filtrar</button>
+    </form>
+</div>
+
+<div class="box">
+    <table>
+        <tr>
+            <th>Aluno</th>
+            <th>Turma</th>
+            <th>Disciplina</th>
+            <th>Bimestre</th>
+            <th>Nota</th>
+        </tr>
+        {% for item in notas %}
+        <tr>
+            <td>{{ item.aluno_nome }}</td>
+            <td>{{ item.turma_nome }}</td>
+            <td>{{ item.disciplina_nome }}</td>
+            <td>{{ item.bimestre }}º</td>
+            <td>{{ item.nota }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
