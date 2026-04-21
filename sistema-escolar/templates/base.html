@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Escolar CEIPC</title>
+    <style>
+        :root {
+            --azul: #1d3557;
+            --azul-2: #23406a;
+            --cinza-bg: #eef1f5;
+            --cinza-borda: #d8dde6;
+            --sucesso-bg: #d1fae5;
+            --sucesso-borda: #10b981;
+            --sucesso-txt: #065f46;
+            --vermelho: #c62828;
+            --azul-ok: #1565c0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: var(--cinza-bg);
+            color: #111827;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 22px;
+        }
+        h1, h2, h3 { color: var(--azul); margin-top: 0; }
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #0b3d91;
+            font-weight: bold;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+        label { display:block; font-weight: 600; margin-bottom: 6px; }
+        input, select, textarea, button {
+            display: block;
+            width: 100%;
+            max-width: 560px;
+            padding: 11px 12px;
+            margin-top: 6px;
+            margin-bottom: 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+        textarea { min-height: 90px; }
+        button, .btn {
+            background: var(--azul);
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: auto;
+            padding: 11px 18px;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .btn-secundario {
+            background: #5b708f;
+        }
+        .btn-imprimir {
+            background: #0d9488;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid var(--cinza-borda);
+            padding: 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        th {
+            background: var(--azul-2);
+            color: white;
+        }
+        .flash {
+            background: var(--sucesso-bg);
+            border: 1px solid var(--sucesso-borda);
+            color: var(--sucesso-txt);
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 18px;
+        }
+        .muted { color: #6b7280; }
+        .table-wrap { overflow-x: auto; }
+        .center { text-align: center; }
+        .nota-aprovada { color: var(--azul-ok); font-weight: bold; }
+        .nota-reprovada { color: var(--vermelho); font-weight: bold; }
+        .mini { font-size: 13px; }
+        .w-80 { width: 80px; min-width: 80px; }
+        .w-95 { width: 95px; min-width: 95px; }
+        .w-110 { width: 110px; min-width: 110px; }
+        .w-140 { width: 140px; min-width: 140px; }
+        .print-only { display: none; }
+        @media print {
+            nav, .no-print, .flash { display: none !important; }
+            body { background: white; }
+            .container { max-width: 100%; padding: 0; }
+            .box { box-shadow: none; border-radius: 0; padding: 0; margin: 0 0 12px 0; }
+            .print-only { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema Escolar CEIPC</h1>
+
+        <nav>
+            <a href="/">Início</a>
+            <a href="/turmas">Turmas</a>
+            <a href="/alunos">Alunos</a>
+            <a href="/disciplinas">Disciplinas</a>
+            <a href="/diario">Diário / Boletim</a>
+            <a href="/notas">Lançar Nota Simples</a>
+            <a href="/notas/listar">Ver Notas Simples</a>
+            <a href="/buscar">Busca</a>
+        </nav>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

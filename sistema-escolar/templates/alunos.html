@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box">
+    <h2>Cadastrar Aluno</h2>
+    <form method="POST">
+        <div class="grid-2">
+            <div>
+                <label>Nome completo</label>
+                <input type="text" name="nome" required>
+            </div>
+            <div>
+                <label>Data de nascimento</label>
+                <input type="date" name="data_nascimento">
+            </div>
+            <div>
+                <label>Código do aluno</label>
+                <input type="text" name="codigo_aluno">
+            </div>
+            <div>
+                <label>Turma</label>
+                <select name="turma_id">
+                    <option value="">Selecione uma turma</option>
+                    {% for turma in turmas %}
+                    <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.serie }} - {{ turma.turno }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Nome da mãe</label>
+                <input type="text" name="nome_mae">
+            </div>
+            <div>
+                <label>Nome do pai</label>
+                <input type="text" name="nome_pai">
+            </div>
+            <div>
+                <label>Telefone do responsável</label>
+                <input type="text" name="telefone_responsavel">
+            </div>
+            <div>
+                <label>CPF do aluno</label>
+                <input type="text" name="cpf_aluno">
+            </div>
+            <div>
+                <label>RG do aluno</label>
+                <input type="text" name="rg_aluno">
+            </div>
+        </div>
+
+        <label>Observações</label>
+        <textarea name="observacoes"></textarea>
+
+        <button type="submit">Salvar aluno</button>
+    </form>
+</div>
+
+<div class="box">
+    <h2>Alunos cadastrados</h2>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Nome</th>
+                <th>Nascimento</th>
+                <th>Turma</th>
+                <th>Série</th>
+                <th>Telefone</th>
+                <th>Ações</th>
+            </tr>
+            {% for aluno in alunos %}
+            <tr>
+                <td>{{ aluno.id }}</td>
+                <td>{{ aluno.codigo_aluno or '' }}</td>
+                <td>{{ aluno.nome }}</td>
+                <td>{{ aluno.data_nascimento or '' }}</td>
+                <td>{{ aluno.turma_nome or '' }}</td>
+                <td>{{ aluno.turma_serie or '' }}</td>
+                <td>{{ aluno.telefone_responsavel or '' }}</td>
+                <td>
+                    {% if aluno.turma_nome %}
+                    <a class="btn" href="/diario?turma_id={{ aluno.id and '' }}"></a>
+                    {% endif %}
+                    <a class="btn btn-secundario" href="/boletim/{{ aluno.id }}">Boletim</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

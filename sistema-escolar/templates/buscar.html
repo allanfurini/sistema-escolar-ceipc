@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box no-print">
+    <h2>Busca ampla</h2>
+    <p class="muted">Você pode buscar por nome do aluno, código, nome da mãe, nome do pai ou telefone.</p>
+    <form method="GET">
+        <label>Pesquisar</label>
+        <input type="text" name="q" value="{{ termo }}" placeholder="Ex.: Dilan, Isabela, telefone, nome do pai...">
+        <button type="submit">Buscar</button>
+    </form>
+</div>
+
+{% if termo %}
+<div class="box">
+    <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h2>Resultados para: {{ termo }}</h2>
+        <button class="btn btn-imprimir" onclick="window.print()">Imprimir resultados</button>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Aluno</th>
+                <th>Código</th>
+                <th>Turma</th>
+                <th>Série</th>
+                <th>Mãe</th>
+                <th>Pai</th>
+                <th>Telefone</th>
+                <th>Ações</th>
+            </tr>
+            {% for item in resultados %}
+            <tr>
+                <td>{{ item.nome }}</td>
+                <td>{{ item.codigo_aluno or '' }}</td>
+                <td>{{ item.turma_nome or '' }}</td>
+                <td>{{ item.turma_serie or '' }}</td>
+                <td>{{ item.nome_mae or '' }}</td>
+                <td>{{ item.nome_pai or '' }}</td>
+                <td>{{ item.telefone_responsavel or '' }}</td>
+                <td><a class="btn btn-secundario" href="/boletim/{{ item.id }}">Boletim</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

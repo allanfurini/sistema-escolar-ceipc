@@ -2,7 +2,8 @@
 
 {% block content %}
 <div class="box">
-    <h2>Lançar Nota</h2>
+    <h2>Lançar Nota Simples</h2>
+    <p class="muted">Esta tela antiga foi mantida. Para o lançamento rápido por matéria e por bimestre, use <strong>Diário / Boletim</strong>.</p>
     <form method="POST">
         <label>Aluno</label>
         <select name="aluno_id" required>
@@ -39,7 +40,7 @@
         <label>Nota</label>
         <input type="number" name="nota" step="0.1" min="0" max="10" required>
 
-        <button type="submit">Salvar nota</button>
+        <button type="submit">Salvar nota simples</button>
     </form>
 </div>
 {% endblock %}
