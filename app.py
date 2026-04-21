@@ -5,7 +5,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 app = Flask(__name__)
 app.secret_key = "ceipc-secretaria-2026"
 
-DB_NAME = "escola.db"
+import os
+
+DB_NAME = os.path.join(
+    os.environ.get("RENDER_DISK_PATH", "/opt/render/project/src/storage"),
+    "escola.db"
+)
 
 
 def get_connection():
