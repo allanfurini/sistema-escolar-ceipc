@@ -1,13 +1,9 @@
-
 {% extends "base.html" %}
-{% block title %}Login · Sistema Escolar CEIPC{% endblock %}
+{% block title %}Login · {{ school_settings.school_subtitle }}{% endblock %}
 {% block content %}
 <div class="card" style="max-width:520px;margin:40px auto;">
     <h2 class="section-title">Entrar no sistema</h2>
-    <p class="subtle">Use seu login para acessar os boletins, diários, alunos e relatórios.</p>
-    <div class="warning">
-        Login inicial: <strong>admin</strong> · Senha inicial: <strong>admin123</strong>. Troque esse acesso criando outro usuário administrador.
-    </div>
+    <p class="subtle">Use seu login para acessar boletins, diários, cadastros e relatórios.</p>
     <form method="POST">
         <div style="margin-bottom:14px;">
             <label>Usuário</label>

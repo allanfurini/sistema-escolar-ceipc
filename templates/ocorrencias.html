@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Relatórios do aluno / Ocorrências</h2>
+    <form method="POST" class="grid grid-3">
+        <div><label>Aluno</label><select name="aluno_id" required><option value="">Selecione</option>{% for aluno in alunos %}<option value="{{ aluno.id }}" {% if aluno_id == aluno.id|string %}selected{% endif %}>{{ aluno.nome }}</option>{% endfor %}</select></div>
+        <div><label>Título</label><input type="text" name="titulo" required placeholder="Ex.: Ocorrência disciplinar"></div>
+        <div><label>Data da ocorrência</label><input type="datetime-local" name="data_ocorrencia"></div>
+        <div style="grid-column:1/-1;"><label>Descrição</label><textarea name="descricao" required placeholder="Descreva o ocorrido de forma objetiva."></textarea></div>
+        <div class="actions" style="grid-column:1/-1;"><button type="submit">Registrar ocorrência</button></div>
+    </form>
+</div>
+<div class="card">
+    <form method="GET" class="inline-form">
+        <div><label>Filtrar por aluno</label><select name="aluno_id"><option value="">Todos</option>{% for aluno in alunos %}<option value="{{ aluno.id }}" {% if aluno_id == aluno.id|string %}selected{% endif %}>{{ aluno.nome }}</option>{% endfor %}</select></div>
+        <div><label>Busca livre</label><input type="text" name="termo" value="{{ termo }}" placeholder="Nome, título ou trecho"></div>
+        <div class="actions"><button type="submit">Filtrar</button></div>
+    </form>
+</div>
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <tr><th>Data</th><th>Aluno</th><th>Título</th><th>Descrição</th><th>Criado por</th><th>Ações</th></tr>
+            {% for item in ocorrencias %}
+            <tr>
+                <td>{{ item.data_ocorrencia }}</td>
+                <td>{{ item.aluno_nome }}</td>
+                <td>{{ item.titulo }}</td>
+                <td>{{ item.descricao }}</td>
+                <td>{{ item.criado_por or '' }}</td>
+                <td><a class="btn btn-secundario" href="{{ url_for('ocorrencia_imprimir', ocorrencia_id=item.id) }}" target="_blank">Imprimir</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

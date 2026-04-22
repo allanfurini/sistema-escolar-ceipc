@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Relatório do aluno{% endblock %}
+{% block content %}
+<div class="card no-print"><div class="actions" style="justify-content:flex-end;"><button onclick="window.print()" class="btn btn-verde">Imprimir relatório</button></div></div>
+<div class="card">
+    <div class="header-doc">
+        {% if logo_exists %}<img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo">{% else %}<div class="brand-mark">CE</div>{% endif %}
+        <div><h2>{{ school_settings.school_name }}</h2><h3>Relatório do aluno / Ocorrência</h3><p>{{ school_settings.school_subtitle }}{% if school_settings.cnpj %} · CNPJ {{ school_settings.cnpj }}{% endif %}</p></div>
+    </div>
+    <div class="doc-meta">
+        <div><strong>Aluno</strong>{{ item.aluno_nome }}</div>
+        <div><strong>Turma</strong>{{ item.turma_nome or '' }}</div>
+        <div><strong>Série</strong>{{ item.turma_serie or '' }}</div>
+        <div><strong>Turno</strong>{{ item.turma_turno or '' }}</div>
+        <div><strong>Código do aluno</strong>{{ item.codigo_aluno or '' }}</div>
+        <div><strong>Data da ocorrência</strong>{{ item.data_ocorrencia }}</div>
+        <div><strong>Responsável</strong>{{ item.nome_mae or item.nome_pai or '' }}</div>
+        <div><strong>Criado por</strong>{{ item.criado_por or '' }}</div>
+    </div>
+    <div class="card" style="border:1px solid var(--borda); box-shadow:none; padding:16px;">
+        <strong>{{ item.titulo }}</strong>
+        <p style="white-space:pre-wrap; margin-top:12px;">{{ item.descricao }}</p>
+    </div>
+    <div class="footer-note" style="margin-top:16px;">Documento emitido em {{ now_label }}.</div>
+    <div class="signature-row">
+        <div class="signature-line">{{ school_settings.coordenacao_label }}</div>
+        <div class="signature-line">{{ school_settings.direcao_label }}</div>
+    </div>
+</div>
+{% endblock %}

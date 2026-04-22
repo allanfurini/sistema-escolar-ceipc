@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Configurações da escola</h2>
+    <p class="subtle">Aqui você pode mudar o nome da escola, subtítulo do sistema, CNPJ, textos de assinatura e enviar a logo oficial.</p>
+    <form method="POST" enctype="multipart/form-data" class="grid grid-3">
+        <div><label>Nome da escola</label><input type="text" name="school_name" value="{{ settings.school_name }}"></div>
+        <div><label>Subtítulo do sistema</label><input type="text" name="school_subtitle" value="{{ settings.school_subtitle }}"></div>
+        <div><label>Título do boletim</label><input type="text" name="report_title" value="{{ settings.report_title }}"></div>
+        <div><label>Cidade</label><input type="text" name="city" value="{{ settings.city }}"></div>
+        <div><label>CNPJ</label><input type="text" name="cnpj" value="{{ settings.cnpj }}"></div>
+        <div><label>Nova logo (PNG recomendado)</label><input type="file" name="logo_file" accept="image/*"></div>
+        <div><label>Assinatura 1</label><input type="text" name="coordenacao_label" value="{{ settings.coordenacao_label }}"></div>
+        <div><label>Assinatura 2</label><input type="text" name="direcao_label" value="{{ settings.direcao_label }}"></div>
+        <div class="actions" style="grid-column:1/-1;"><button type="submit">Salvar configurações</button></div>
+    </form>
+    {% if logo_exists %}
+    <div style="margin-top:18px;"><strong>Logo atual:</strong><br><img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo" style="max-height:120px; margin-top:10px;"></div>
+    {% endif %}
+</div>
+{% endblock %}

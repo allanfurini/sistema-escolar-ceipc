@@ -21,6 +21,18 @@ if not os.path.isdir(STORAGE_DIR):
 
 DB_NAME = os.path.join(STORAGE_DIR, "escola.db")
 PASSING_GRADE = 7.0
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+os.makedirs(STATIC_DIR, exist_ok=True)
+
+DEFAULT_SETTINGS = {
+    "school_name": "Centro de Educação Infantil Pedacinho do Céu",
+    "school_subtitle": "Sistema Escolar CEIPC",
+    "report_title": "Boletim Escolar",
+    "city": "Rondonópolis - MT",
+    "cnpj": "",
+    "coordenacao_label": "Assinatura da Coordenação",
+    "direcao_label": "Assinatura da Direção",
+}
 
 
 def get_connection():
@@ -144,6 +156,33 @@ def init_db():
     """)
 
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS school_settings (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        school_name TEXT,
+        school_subtitle TEXT,
+        report_title TEXT,
+        city TEXT,
+        cnpj TEXT,
+        coordenacao_label TEXT,
+        direcao_label TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ocorrencias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aluno_id INTEGER NOT NULL,
+        titulo TEXT NOT NULL,
+        descricao TEXT NOT NULL,
+        data_ocorrencia TEXT DEFAULT CURRENT_TIMESTAMP,
+        criado_por TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    )
+    """)
+
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
@@ -213,6 +252,24 @@ def init_db():
     cursor.execute("UPDATE alunos SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)")
     cursor.execute("UPDATE turmas SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP)")
 
+    existing_settings = cursor.execute("SELECT id FROM school_settings WHERE id = 1").fetchone()
+    if not existing_settings:
+        cursor.execute(
+            """
+            INSERT INTO school_settings (id, school_name, school_subtitle, report_title, city, cnpj, coordenacao_label, direcao_label)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                DEFAULT_SETTINGS["school_name"],
+                DEFAULT_SETTINGS["school_subtitle"],
+                DEFAULT_SETTINGS["report_title"],
+                DEFAULT_SETTINGS["city"],
+                DEFAULT_SETTINGS["cnpj"],
+                DEFAULT_SETTINGS["coordenacao_label"],
+                DEFAULT_SETTINGS["direcao_label"],
+            ),
+        )
+
     # Cria admin inicial se não existir ninguém
     existing_user = cursor.execute("SELECT id FROM users LIMIT 1").fetchone()
     if not existing_user:
@@ -244,6 +301,31 @@ def log_action(action, table_name=None, record_id=None, details=None):
         conn.close()
     except Exception:
         pass
+
+
+def get_school_settings(conn=None):
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+    row = conn.execute("SELECT * FROM school_settings WHERE id = 1").fetchone()
+    if should_close:
+        conn.close()
+    if not row:
+        return DEFAULT_SETTINGS.copy()
+    data = dict(row)
+    for key, default in DEFAULT_SETTINGS.items():
+        if not data.get(key):
+            data[key] = default
+    return data
+
+
+def save_logo_file(file_storage):
+    if not file_storage or not file_storage.filename:
+        return False
+    destination = os.path.join(STATIC_DIR, "logo-escola.png")
+    file_storage.save(destination)
+    return True
 
 
 def current_timestamp():
@@ -359,6 +441,13 @@ def load_logged_user():
 @app.context_processor
 def inject_global_vars():
     logo_exists = os.path.exists(os.path.join(app.static_folder, "logo-escola.png"))
+    settings = get_school_settings()
+    default_admin_active = False
+    conn = get_connection()
+    row = conn.execute("SELECT ativo FROM users WHERE username = 'admin' LIMIT 1").fetchone()
+    conn.close()
+    if row and int(row["ativo"] or 0) == 1:
+        default_admin_active = True
     return dict(
         media_notas=media_notas,
         media_anual=media_anual,
@@ -369,6 +458,8 @@ def inject_global_vars():
         logo_exists=logo_exists,
         current_year=datetime.now().year,
         now_label=current_timestamp(),
+        school_settings=settings,
+        default_admin_active=default_admin_active,
     )
 
 
@@ -442,6 +533,7 @@ def index():
     total_disciplinas = conn.execute("SELECT COUNT(*) AS total FROM disciplinas WHERE ativa = 1").fetchone()["total"]
     total_boletins = conn.execute("SELECT COUNT(*) AS total FROM boletim_itens").fetchone()["total"]
     total_usuarios = conn.execute("SELECT COUNT(*) AS total FROM users WHERE ativo = 1").fetchone()["total"]
+    total_ocorrencias = conn.execute("SELECT COUNT(*) AS total FROM ocorrencias").fetchone()["total"]
 
     conn.close()
 
@@ -452,6 +544,7 @@ def index():
         total_disciplinas=total_disciplinas,
         total_boletins=total_boletins,
         total_usuarios=total_usuarios,
+        total_ocorrencias=total_ocorrencias,
     )
 
 
@@ -1066,6 +1159,171 @@ def admin_usuarios():
     ).fetchall()
     conn.close()
     return render_template("admin_usuarios.html", usuarios=usuarios, logs=logs)
+
+
+@app.route("/admin/usuarios/<int:user_id>/editar", methods=["POST"])
+@admin_required
+def admin_usuario_editar(user_id):
+    conn = get_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        flash("Usuário não encontrado.")
+        return redirect(url_for("admin_usuarios"))
+
+    nome = request.form.get("nome", "").strip()
+    username = request.form.get("username", "").strip()
+    role = request.form.get("role", "secretaria").strip()
+    ativo = 1 if request.form.get("ativo") == "1" else 0
+    nova_senha = request.form.get("password", "")
+
+    if not nome or not username:
+        flash("Nome e login são obrigatórios.")
+        conn.close()
+        return redirect(url_for("admin_usuarios"))
+
+    outro = conn.execute("SELECT id FROM users WHERE username = ? AND id <> ?", (username, user_id)).fetchone()
+    if outro:
+        flash("Já existe outro usuário com esse login.")
+        conn.close()
+        return redirect(url_for("admin_usuarios"))
+
+    if nova_senha:
+        conn.execute("UPDATE users SET nome = ?, username = ?, role = ?, ativo = ?, password_hash = ? WHERE id = ?",
+                     (nome, username, role, ativo, generate_password_hash(nova_senha), user_id))
+    else:
+        conn.execute("UPDATE users SET nome = ?, username = ?, role = ?, ativo = ? WHERE id = ?",
+                     (nome, username, role, ativo, user_id))
+    conn.commit()
+    conn.close()
+    log_action("EDITAR_USUARIO", "users", user_id, f"Usuário {username} atualizado")
+    flash("Usuário atualizado com sucesso.")
+    return redirect(url_for("admin_usuarios"))
+
+
+@app.route("/admin/usuarios/<int:user_id>/excluir", methods=["POST"])
+@admin_required
+def admin_usuario_excluir(user_id):
+    conn = get_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        flash("Usuário não encontrado.")
+        return redirect(url_for("admin_usuarios"))
+    if user["id"] == session.get("user_id"):
+        conn.close()
+        flash("Você não pode excluir o usuário que está logado.")
+        return redirect(url_for("admin_usuarios"))
+    conn.execute("UPDATE users SET ativo = 0 WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    log_action("EXCLUIR_USUARIO", "users", user_id, f"Usuário {user['username']} desativado")
+    flash("Usuário desativado com sucesso.")
+    return redirect(url_for("admin_usuarios"))
+
+
+@app.route("/admin/configuracoes", methods=["GET", "POST"])
+@admin_required
+def admin_configuracoes():
+    conn = get_connection()
+    if request.method == "POST":
+        data = {
+            "school_name": request.form.get("school_name", "").strip(),
+            "school_subtitle": request.form.get("school_subtitle", "").strip(),
+            "report_title": request.form.get("report_title", "").strip(),
+            "city": request.form.get("city", "").strip(),
+            "cnpj": request.form.get("cnpj", "").strip(),
+            "coordenacao_label": request.form.get("coordenacao_label", "").strip(),
+            "direcao_label": request.form.get("direcao_label", "").strip(),
+        }
+        conn.execute(
+            """
+            UPDATE school_settings
+            SET school_name = ?, school_subtitle = ?, report_title = ?, city = ?, cnpj = ?,
+                coordenacao_label = ?, direcao_label = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = 1
+            """,
+            (data["school_name"], data["school_subtitle"], data["report_title"], data["city"], data["cnpj"], data["coordenacao_label"], data["direcao_label"])
+        )
+        if save_logo_file(request.files.get("logo_file")):
+            flash("Logo enviada com sucesso.")
+        conn.commit()
+        conn.close()
+        log_action("ATUALIZAR_CONFIGURACOES", "school_settings", 1, "Configurações da escola atualizadas")
+        flash("Configurações da escola atualizadas.")
+        return redirect(url_for("admin_configuracoes"))
+
+    settings = get_school_settings(conn)
+    conn.close()
+    return render_template("admin_configuracoes.html", settings=settings)
+
+
+@app.route("/ocorrencias", methods=["GET", "POST"])
+@login_required
+def ocorrencias():
+    conn = get_connection()
+    aluno_id = request.values.get("aluno_id", "").strip()
+    termo = request.values.get("termo", "").strip()
+
+    if request.method == "POST":
+        aluno_id = request.form.get("aluno_id", "").strip()
+        titulo = request.form.get("titulo", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+        data_ocorrencia = request.form.get("data_ocorrencia", "").strip()
+        if aluno_id and titulo and descricao:
+            cursor = conn.execute(
+                "INSERT INTO ocorrencias (aluno_id, titulo, descricao, data_ocorrencia, criado_por) VALUES (?, ?, ?, COALESCE(NULLIF(?, ''), CURRENT_TIMESTAMP), ?)",
+                (aluno_id, titulo, descricao, data_ocorrencia, session.get("username"))
+            )
+            conn.commit()
+            log_action("CRIAR_OCORRENCIA", "ocorrencias", cursor.lastrowid, f"Ocorrência do aluno {aluno_id}")
+            flash("Ocorrência registrada com sucesso.")
+            conn.close()
+            return redirect(url_for("ocorrencias", aluno_id=aluno_id))
+        else:
+            flash("Preencha aluno, título e descrição.")
+
+    alunos = conn.execute("SELECT id, nome FROM alunos WHERE ativo = 1 ORDER BY nome ASC").fetchall()
+    query = """
+        SELECT ocorrencias.*, alunos.nome AS aluno_nome, alunos.codigo_aluno
+        FROM ocorrencias
+        INNER JOIN alunos ON alunos.id = ocorrencias.aluno_id
+        WHERE 1=1
+    """
+    params = []
+    if aluno_id:
+        query += " AND ocorrencias.aluno_id = ?"
+        params.append(aluno_id)
+    if termo:
+        query += " AND (alunos.nome LIKE ? OR ocorrencias.titulo LIKE ? OR ocorrencias.descricao LIKE ?)"
+        like = f"%{termo}%"
+        params.extend([like, like, like])
+    query += " ORDER BY ocorrencias.data_ocorrencia DESC, ocorrencias.id DESC"
+    lista = conn.execute(query, params).fetchall()
+    conn.close()
+    return render_template("ocorrencias.html", alunos=alunos, ocorrencias=lista, aluno_id=aluno_id, termo=termo)
+
+
+@app.route("/ocorrencias/<int:ocorrencia_id>/imprimir")
+@login_required
+def ocorrencia_imprimir(ocorrencia_id):
+    conn = get_connection()
+    item = conn.execute(
+        """
+        SELECT ocorrencias.*, alunos.nome AS aluno_nome, alunos.codigo_aluno, alunos.nome_mae, alunos.nome_pai,
+               turmas.nome AS turma_nome, turmas.serie AS turma_serie, turmas.turno AS turma_turno, turmas.ano_letivo
+        FROM ocorrencias
+        INNER JOIN alunos ON alunos.id = ocorrencias.aluno_id
+        LEFT JOIN matriculas ON matriculas.aluno_id = alunos.id AND matriculas.ativa = 1
+        LEFT JOIN turmas ON turmas.id = matriculas.turma_id
+        WHERE ocorrencias.id = ?
+        """,
+        (ocorrencia_id,)
+    ).fetchone()
+    conn.close()
+    if not item:
+        abort(404)
+    return render_template("ocorrencia_imprimir.html", item=item)
 
 
 @app.route("/backup/exportar")

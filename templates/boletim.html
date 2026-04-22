@@ -1,6 +1,14 @@
-
 {% extends "base.html" %}
 {% block title %}Boletim · {{ aluno.nome }}{% endblock %}
+{% block head %}
+<style>
+.doc-table { table-layout: fixed; }
+.doc-table col.disc { width: 12.5%; }
+.doc-table col.small { width: 4.15%; }
+.doc-table col.annual { width: 6.5%; }
+.doc-table col.result { width: 7.5%; }
+</style>
+{% endblock %}
 {% block content %}
 <div class="card no-print">
     <div class="actions" style="justify-content:flex-end;">
@@ -17,9 +25,9 @@
             <div class="brand-mark">CE</div>
         {% endif %}
         <div>
-            <h2>Centro de Educação Infantil Pedacinho do Céu</h2>
-            <h3>Boletim Escolar · Ano letivo {{ aluno.ano_letivo or current_year }}</h3>
-            <p>Sistema Escolar CEIPC</p>
+            <h2>{{ school_settings.school_name }}</h2>
+            <h3>{{ school_settings.report_title }} · Ano letivo {{ aluno.ano_letivo or current_year }}</h3>
+            <p>{{ school_settings.school_subtitle }}{% if school_settings.cnpj %} · CNPJ {{ school_settings.cnpj }}{% endif %}</p>
         </div>
         <div class="no-print actions" style="justify-content:flex-end;">
             <button onclick="window.print()" class="btn btn-verde">Imprimir boletim</button>
@@ -38,7 +46,13 @@
     </div>
 
     <div class="table-wrap">
-        <table>
+        <table class="doc-table">
+            <colgroup>
+                <col class="disc">
+                {% for _ in range(24) %}<col class="small">{% endfor %}
+                <col class="annual">
+                <col class="result">
+            </colgroup>
             <tr>
                 <th rowspan="2">Componente curricular</th>
                 <th colspan="6">1º Bimestre</th>
@@ -49,9 +63,7 @@
                 <th rowspan="2">Resultado</th>
             </tr>
             <tr>
-                {% for _ in range(4) %}
-                    <th>N1</th><th>N2</th><th>N3</th><th>N4</th><th>Média</th><th>Faltas</th>
-                {% endfor %}
+                {% for _ in range(4) %}<th>N1</th><th>N2</th><th>N3</th><th>N4</th><th>Média</th><th>Faltas</th>{% endfor %}
             </tr>
             {% for item in linhas %}
             {% set b1 = media_notas(item['b1_n1'], item['b1_n2'], item['b1_n3'], item['b1_n4']) %}
@@ -61,34 +73,10 @@
             {% set anual = media_anual([b1, b2, b3, b4]) %}
             <tr>
                 <td><strong>{{ item.disciplina_nome }}</strong></td>
-                <td>{{ format_nota(item['b1_n1']) }}</td>
-                <td>{{ format_nota(item['b1_n2']) }}</td>
-                <td>{{ format_nota(item['b1_n3']) }}</td>
-                <td>{{ format_nota(item['b1_n4']) }}</td>
-                <td class="{{ nota_css_class(b1) }}">{{ format_nota(b1) }}</td>
-                <td>{{ item['b1_faltas'] or '' }}</td>
-
-                <td>{{ format_nota(item['b2_n1']) }}</td>
-                <td>{{ format_nota(item['b2_n2']) }}</td>
-                <td>{{ format_nota(item['b2_n3']) }}</td>
-                <td>{{ format_nota(item['b2_n4']) }}</td>
-                <td class="{{ nota_css_class(b2) }}">{{ format_nota(b2) }}</td>
-                <td>{{ item['b2_faltas'] or '' }}</td>
-
-                <td>{{ format_nota(item['b3_n1']) }}</td>
-                <td>{{ format_nota(item['b3_n2']) }}</td>
-                <td>{{ format_nota(item['b3_n3']) }}</td>
-                <td>{{ format_nota(item['b3_n4']) }}</td>
-                <td class="{{ nota_css_class(b3) }}">{{ format_nota(b3) }}</td>
-                <td>{{ item['b3_faltas'] or '' }}</td>
-
-                <td>{{ format_nota(item['b4_n1']) }}</td>
-                <td>{{ format_nota(item['b4_n2']) }}</td>
-                <td>{{ format_nota(item['b4_n3']) }}</td>
-                <td>{{ format_nota(item['b4_n4']) }}</td>
-                <td class="{{ nota_css_class(b4) }}">{{ format_nota(b4) }}</td>
-                <td>{{ item['b4_faltas'] or '' }}</td>
-
+                <td>{{ format_nota(item['b1_n1']) }}</td><td>{{ format_nota(item['b1_n2']) }}</td><td>{{ format_nota(item['b1_n3']) }}</td><td>{{ format_nota(item['b1_n4']) }}</td><td class="{{ nota_css_class(b1) }}">{{ format_nota(b1) }}</td><td>{{ item['b1_faltas'] or '' }}</td>
+                <td>{{ format_nota(item['b2_n1']) }}</td><td>{{ format_nota(item['b2_n2']) }}</td><td>{{ format_nota(item['b2_n3']) }}</td><td>{{ format_nota(item['b2_n4']) }}</td><td class="{{ nota_css_class(b2) }}">{{ format_nota(b2) }}</td><td>{{ item['b2_faltas'] or '' }}</td>
+                <td>{{ format_nota(item['b3_n1']) }}</td><td>{{ format_nota(item['b3_n2']) }}</td><td>{{ format_nota(item['b3_n3']) }}</td><td>{{ format_nota(item['b3_n4']) }}</td><td class="{{ nota_css_class(b3) }}">{{ format_nota(b3) }}</td><td>{{ item['b3_faltas'] or '' }}</td>
+                <td>{{ format_nota(item['b4_n1']) }}</td><td>{{ format_nota(item['b4_n2']) }}</td><td>{{ format_nota(item['b4_n3']) }}</td><td>{{ format_nota(item['b4_n4']) }}</td><td class="{{ nota_css_class(b4) }}">{{ format_nota(b4) }}</td><td>{{ item['b4_faltas'] or '' }}</td>
                 <td class="{{ nota_css_class(anual) }}">{{ format_nota(anual) }}</td>
                 <td class="{{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
             </tr>
@@ -96,32 +84,30 @@
         </table>
     </div>
 
-    <div class="card" style="margin-top:18px; padding:16px;">
-        <strong>Histórico de turmas do aluno</strong>
-        <div class="table-wrap" style="margin-top:10px;">
-            <table>
-                <tr><th>Turma</th><th>Série</th><th>Turno</th><th>Ano</th><th>Início</th><th>Fim</th></tr>
-                {% for hist in historico_matriculas %}
-                <tr>
-                    <td>{{ hist.turma_nome }}</td>
-                    <td>{{ hist.serie }}</td>
-                    <td>{{ hist.turno }}</td>
-                    <td>{{ hist.ano_letivo }}</td>
-                    <td>{{ hist.data_inicio or '' }}</td>
-                    <td>{{ hist.data_fim or '' }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-
-    <div style="margin-top:14px;" class="footer-note">
-        Documento emitido em {{ now_label }}.
-    </div>
+    <div class="footer-note" style="margin-top:14px;">Documento emitido em {{ now_label }}.</div>
 
     <div class="signature-row">
-        <div class="signature-line">Assinatura da Coordenação</div>
-        <div class="signature-line">Assinatura da Direção</div>
+        <div class="signature-line">{{ school_settings.coordenacao_label }}</div>
+        <div class="signature-line">{{ school_settings.direcao_label }}</div>
+    </div>
+</div>
+
+<div class="card no-print" style="margin-top:18px; padding:16px;">
+    <strong>Histórico de turmas do aluno</strong>
+    <div class="table-wrap" style="margin-top:10px;">
+        <table>
+            <tr><th>Turma</th><th>Série</th><th>Turno</th><th>Ano</th><th>Início</th><th>Fim</th></tr>
+            {% for hist in historico_matriculas %}
+            <tr>
+                <td>{{ hist.turma_nome }}</td>
+                <td>{{ hist.serie }}</td>
+                <td>{{ hist.turno }}</td>
+                <td>{{ hist.ano_letivo }}</td>
+                <td>{{ hist.data_inicio or '' }}</td>
+                <td>{{ hist.data_fim or '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
 </div>
 {% endblock %}

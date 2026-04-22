@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
@@ -9,34 +8,41 @@
         <div class="stat"><div class="label">Disciplinas ativas</div><div class="value">{{ total_disciplinas }}</div></div>
         <div class="stat"><div class="label">Registros de boletim</div><div class="value">{{ total_boletins }}</div></div>
         <div class="stat"><div class="label">Usuários do sistema</div><div class="value">{{ total_usuarios }}</div></div>
+        <div class="stat"><div class="label">Relatórios registrados</div><div class="value">{{ total_ocorrencias }}</div></div>
     </div>
 </div>
 
 <div class="card">
-    <h2 class="section-title">Versão 3</h2>
+    <h2 class="section-title">Versão 4</h2>
     <div class="grid grid-2">
         <div>
             <p><strong>Já incluído nesta versão:</strong></p>
             <ul>
-                <li>login e senha</li>
-                <li>auditoria básica de alterações</li>
                 <li>edição do cadastro do aluno</li>
-                <li>exclusão com confirmação dupla</li>
+                <li>exclusão lógica com confirmação</li>
                 <li>mudança de turma preservando histórico</li>
                 <li>boletim anual com notas, médias e faltas</li>
-                <li>histórico de transferência para impressão</li>
+                <li>configurações da escola com logo, nome e CNPJ</li>
+                <li>relatórios do aluno para impressão</li>
+                <li>usuários editáveis e excluíveis</li>
                 <li>backup manual do banco</li>
             </ul>
         </div>
         <div>
             <p><strong>Importante:</strong></p>
             <ul>
-                <li>os upgrades agora só acrescentam colunas/tabelas novas</li>
-                <li>cadastros antigos devem continuar no banco</li>
+                <li>os upgrades acrescentam campos e tabelas sem apagar os dados já cadastrados</li>
                 <li>campos novos podem ser preenchidos depois na edição</li>
+                <li>a logo agora pode ser enviada pelo próprio sistema</li>
                 <li>o log mostra quem alterou itens principais</li>
             </ul>
         </div>
     </div>
 </div>
+
+{% if default_admin_active and g.user and g.user['role'] == 'admin' %}
+<div class="warning">
+    O usuário padrão <strong>admin</strong> ainda está ativo. Edite ou desative esse usuário na área <strong>Usuários</strong>.
+</div>
+{% endif %}
 {% endblock %}
