@@ -1,0 +1,70 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Administração de usuários</h2>
+    <form method="POST" class="grid grid-4">
+        <div>
+            <label>Nome</label>
+            <input type="text" name="nome" required>
+        </div>
+        <div>
+            <label>Login</label>
+            <input type="text" name="username" required>
+        </div>
+        <div>
+            <label>Senha</label>
+            <input type="password" name="password" required>
+        </div>
+        <div>
+            <label>Perfil</label>
+            <select name="role">
+                <option value="secretaria">Secretaria</option>
+                <option value="admin">Administrador</option>
+            </select>
+        </div>
+        <div class="actions" style="grid-column:1/-1;">
+            <button type="submit">Criar usuário</button>
+            <a href="{{ url_for('backup_exportar') }}" class="btn btn-verde">Baixar backup agora</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Usuários cadastrados</h2>
+    <div class="table-wrap">
+        <table>
+            <tr><th>ID</th><th>Nome</th><th>Login</th><th>Perfil</th><th>Status</th><th>Criado em</th></tr>
+            {% for user in usuarios %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.nome }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.role }}</td>
+                <td>{% if user.ativo %}<span class="pill pill-ok">Ativo</span>{% else %}<span class="pill pill-bad">Inativo</span>{% endif %}</td>
+                <td>{{ user.created_at or '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Log de alterações</h2>
+    <div class="table-wrap">
+        <table>
+            <tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Tabela</th><th>Registro</th><th>Detalhes</th></tr>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.created_at }}</td>
+                <td>{{ log.username or '' }}</td>
+                <td>{{ log.action }}</td>
+                <td>{{ log.table_name or '' }}</td>
+                <td>{{ log.record_id or '' }}</td>
+                <td>{{ log.details or '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

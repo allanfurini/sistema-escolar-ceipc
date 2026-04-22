@@ -1,28 +1,26 @@
-{% extends "base.html" %}
 
+{% extends "base.html" %}
 {% block content %}
-<div class="box">
-    <h2>Cadastrar Disciplina</h2>
-    <form method="POST">
-        <label>Nome da disciplina</label>
-        <input type="text" name="nome" placeholder="Ex.: Matemática" required>
-        <button type="submit">Salvar disciplina</button>
+<div class="card">
+    <h2 class="section-title">Cadastrar disciplina</h2>
+    <form method="POST" class="inline-form">
+        <div>
+            <label>Nome da disciplina</label>
+            <input type="text" name="nome" placeholder="Ex.: Matemática" required>
+        </div>
+        <div class="actions">
+            <button type="submit">Salvar disciplina</button>
+        </div>
     </form>
 </div>
 
-<div class="box">
-    <h2>Disciplinas cadastradas</h2>
+<div class="card">
+    <h2 class="section-title">Disciplinas cadastradas</h2>
     <div class="table-wrap">
         <table>
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-            </tr>
+            <tr><th>ID</th><th>Nome</th></tr>
             {% for disciplina in disciplinas %}
-            <tr>
-                <td>{{ disciplina.id }}</td>
-                <td>{{ disciplina.nome }}</td>
-            </tr>
+            <tr><td>{{ disciplina.id }}</td><td>{{ disciplina.nome }}</td></tr>
             {% endfor %}
         </table>
     </div>

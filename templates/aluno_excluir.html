@@ -1,0 +1,28 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Excluir aluno com confirmação dupla</h2>
+    <div class="danger">
+        Esta exclusão é lógica: o cadastro deixa de aparecer nas listagens ativas, mas o banco preserva rastros administrativos.
+    </div>
+    <p><strong>Aluno:</strong> {{ aluno.nome }}</p>
+    <p><strong>Código:</strong> {{ aluno.codigo_aluno or '' }}</p>
+    <p><strong>Turma atual:</strong> {{ aluno.turma_nome or 'Sem turma ativa' }}</p>
+
+    <form method="POST" class="grid grid-2">
+        <div>
+            <label>Digite EXCLUIR</label>
+            <input type="text" name="confirmation_text" required>
+        </div>
+        <div>
+            <label>Digite o nome completo do aluno</label>
+            <input type="text" name="confirmation_name" required>
+        </div>
+        <div class="actions" style="grid-column:1/-1;">
+            <button type="submit" class="btn-vermelho">Confirmar exclusão</button>
+            <a href="{{ url_for('alunos') }}" class="btn btn-secundario">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,27 +1,33 @@
+
 {% extends "base.html" %}
-
 {% block content %}
-<div class="box">
-    <h2>Cadastrar Turma</h2>
-    <form method="POST">
-        <label>Nome da turma</label>
-        <input type="text" name="nome" placeholder="Ex.: Turma A" required>
-
-        <label>Série</label>
-        <input type="text" name="serie" placeholder="Ex.: 5º Ano" required>
-
-        <label>Turno</label>
-        <input type="text" name="turno" placeholder="Ex.: Vespertino" required>
-
-        <label>Ano letivo</label>
-        <input type="text" name="ano_letivo" placeholder="Ex.: 2026" required>
-
-        <button type="submit">Salvar turma</button>
+<div class="card">
+    <h2 class="section-title">Cadastrar turma</h2>
+    <form method="POST" class="grid grid-4">
+        <div>
+            <label>Nome da turma</label>
+            <input type="text" name="nome" placeholder="Ex.: Turma A" required>
+        </div>
+        <div>
+            <label>Série</label>
+            <input type="text" name="serie" placeholder="Ex.: 5º Ano" required>
+        </div>
+        <div>
+            <label>Turno</label>
+            <input type="text" name="turno" placeholder="Ex.: Vespertino" required>
+        </div>
+        <div>
+            <label>Ano letivo</label>
+            <input type="text" name="ano_letivo" placeholder="Ex.: 2026" required>
+        </div>
+        <div class="actions" style="grid-column:1/-1;">
+            <button type="submit">Salvar turma</button>
+        </div>
     </form>
 </div>
 
-<div class="box">
-    <h2>Turmas cadastradas</h2>
+<div class="card">
+    <h2 class="section-title">Turmas cadastradas</h2>
     <div class="table-wrap">
         <table>
             <tr>
@@ -40,7 +46,7 @@
                 <td>{{ turma.turno }}</td>
                 <td>{{ turma.ano_letivo }}</td>
                 <td>
-                    <a class="btn btn-secundario" href="/turmas/{{ turma.id }}/disciplinas">Disciplinas da turma</a>
+                    <a class="btn btn-secundario" href="{{ url_for('turma_disciplinas', turma_id=turma.id) }}">Disciplinas da turma</a>
                 </td>
             </tr>
             {% endfor %}

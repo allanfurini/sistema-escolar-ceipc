@@ -1,62 +1,87 @@
-{% extends "base.html" %}
 
+{% extends "base.html" %}
 {% block content %}
-<div class="box">
-    <h2>Cadastrar Aluno</h2>
-    <form method="POST">
-        <div class="grid-2">
-            <div>
-                <label>Nome completo</label>
-                <input type="text" name="nome" required>
-            </div>
-            <div>
-                <label>Data de nascimento</label>
-                <input type="date" name="data_nascimento">
-            </div>
-            <div>
-                <label>Código do aluno</label>
-                <input type="text" name="codigo_aluno">
-            </div>
-            <div>
-                <label>Turma</label>
-                <select name="turma_id">
-                    <option value="">Selecione uma turma</option>
-                    {% for turma in turmas %}
-                    <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.serie }} - {{ turma.turno }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label>Nome da mãe</label>
-                <input type="text" name="nome_mae">
-            </div>
-            <div>
-                <label>Nome do pai</label>
-                <input type="text" name="nome_pai">
-            </div>
-            <div>
-                <label>Telefone do responsável</label>
-                <input type="text" name="telefone_responsavel">
-            </div>
-            <div>
-                <label>CPF do aluno</label>
-                <input type="text" name="cpf_aluno">
-            </div>
-            <div>
-                <label>RG do aluno</label>
-                <input type="text" name="rg_aluno">
-            </div>
+<div class="card">
+    <h2 class="section-title">Cadastrar aluno</h2>
+    <p class="subtle">Os campos podem ser completados depois na edição do cadastro. Nada disso apaga os dados antigos.</p>
+    <form method="POST" class="grid grid-3">
+        <div>
+            <label>Nome completo</label>
+            <input type="text" name="nome" required>
+        </div>
+        <div>
+            <label>Data de nascimento</label>
+            <input type="date" name="data_nascimento">
+        </div>
+        <div>
+            <label>Código do aluno</label>
+            <input type="text" name="codigo_aluno">
         </div>
 
-        <label>Observações</label>
-        <textarea name="observacoes"></textarea>
+        <div>
+            <label>Turma atual</label>
+            <select name="turma_id">
+                <option value="">Selecione uma turma</option>
+                {% for turma in turmas %}
+                <option value="{{ turma.id }}">{{ turma.nome }} · {{ turma.serie }} · {{ turma.ano_letivo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Telefone do responsável</label>
+            <input type="text" name="telefone_responsavel">
+        </div>
+        <div>
+            <label>E-mail do responsável</label>
+            <input type="email" name="email_responsavel">
+        </div>
 
-        <button type="submit">Salvar aluno</button>
+        <div>
+            <label>Nome da mãe</label>
+            <input type="text" name="nome_mae">
+        </div>
+        <div>
+            <label>CPF da mãe</label>
+            <input type="text" name="cpf_mae">
+        </div>
+        <div>
+            <label>RG da mãe</label>
+            <input type="text" name="rg_mae">
+        </div>
+
+        <div>
+            <label>Nome do pai</label>
+            <input type="text" name="nome_pai">
+        </div>
+        <div>
+            <label>CPF do pai</label>
+            <input type="text" name="cpf_pai">
+        </div>
+        <div>
+            <label>RG do pai</label>
+            <input type="text" name="rg_pai">
+        </div>
+
+        <div>
+            <label>CPF do aluno</label>
+            <input type="text" name="cpf_aluno">
+        </div>
+        <div>
+            <label>RG do aluno</label>
+            <input type="text" name="rg_aluno">
+        </div>
+        <div style="grid-column:1/-1;">
+            <label>Observações</label>
+            <textarea name="observacoes"></textarea>
+        </div>
+        <div class="actions" style="grid-column:1/-1;">
+            <button type="submit">Salvar aluno</button>
+        </div>
     </form>
 </div>
 
-<div class="box">
-    <h2>Alunos cadastrados</h2>
+<div class="card">
+    <h2 class="section-title">Alunos cadastrados</h2>
     <div class="table-wrap">
         <table>
             <tr>
@@ -66,23 +91,27 @@
                 <th>Nascimento</th>
                 <th>Turma</th>
                 <th>Série</th>
+                <th>Ano</th>
                 <th>Telefone</th>
                 <th>Ações</th>
             </tr>
             {% for aluno in alunos %}
             <tr>
                 <td>{{ aluno.id }}</td>
-                <td>{{ aluno.codigo_aluno or '' }}</td>
+                <td>{{ aluno.codigo_aluno or "" }}</td>
                 <td>{{ aluno.nome }}</td>
-                <td>{{ aluno.data_nascimento or '' }}</td>
-                <td>{{ aluno.turma_nome or '' }}</td>
-                <td>{{ aluno.turma_serie or '' }}</td>
-                <td>{{ aluno.telefone_responsavel or '' }}</td>
+                <td>{{ aluno.data_nascimento or "" }}</td>
+                <td>{{ aluno.turma_nome or "" }}</td>
+                <td>{{ aluno.turma_serie or "" }}</td>
+                <td>{{ aluno.turma_ano or "" }}</td>
+                <td>{{ aluno.telefone_responsavel or "" }}</td>
                 <td>
-                    {% if aluno.turma_nome %}
-                    <a class="btn" href="/diario?turma_id={{ aluno.id and '' }}"></a>
-                    {% endif %}
-                    <a class="btn btn-secundario" href="/boletim/{{ aluno.id }}">Boletim</a>
+                    <div class="actions">
+                        <a class="btn btn-secundario" href="{{ url_for('editar_aluno', aluno_id=aluno.id) }}">Editar</a>
+                        <a class="btn btn-secundario" href="{{ url_for('boletim', aluno_id=aluno.id) }}">Boletim</a>
+                        <a class="btn btn-secundario" href="{{ url_for('historico_transferencia', aluno_id=aluno.id) }}">Histórico</a>
+                        <a class="btn btn-vermelho" href="{{ url_for('excluir_aluno', aluno_id=aluno.id) }}">Excluir</a>
+                    </div>
                 </td>
             </tr>
             {% endfor %}

@@ -1,24 +1,27 @@
+
 {% extends "base.html" %}
-
 {% block content %}
-<div class="box">
-    <h2>Notas simples lançadas</h2>
-
-    <form method="GET">
-        <label>Filtrar por turma</label>
-        <select name="turma_id">
-            <option value="">Todas as turmas</option>
-            {% for turma in turmas %}
-            <option value="{{ turma.id }}" {% if turma_id == turma.id|string %}selected{% endif %}>
-                {{ turma.nome }} - {{ turma.serie }} - {{ turma.turno }}
-            </option>
-            {% endfor %}
-        </select>
-        <button type="submit">Filtrar</button>
+<div class="card">
+    <h2 class="section-title">Notas simples lançadas</h2>
+    <form method="GET" class="inline-form">
+        <div>
+            <label>Filtrar por turma</label>
+            <select name="turma_id">
+                <option value="">Todas as turmas</option>
+                {% for turma in turmas %}
+                <option value="{{ turma.id }}" {% if turma_id == turma.id|string %}selected{% endif %}>
+                    {{ turma.nome }} · {{ turma.serie }} · {{ turma.turno }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="actions">
+            <button type="submit">Filtrar</button>
+        </div>
     </form>
 </div>
 
-<div class="box">
+<div class="card">
     <div class="table-wrap">
         <table>
             <tr>

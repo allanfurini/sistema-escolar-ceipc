@@ -1,0 +1,106 @@
+
+{% extends "base.html" %}
+{% block title %}Histórico de transferência · {{ aluno.nome }}{% endblock %}
+{% block content %}
+<div class="card no-print">
+    <div class="warning">
+        Modelo preliminar para secretaria escolar. Antes de usar como documento definitivo, revise com as exigências da sua rede e da sua assessoria escolar.
+    </div>
+    <div class="actions" style="justify-content:flex-end;">
+        <button onclick="window.print()" class="btn btn-verde">Imprimir histórico</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="header-doc">
+        {% if logo_exists %}
+            <img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo da escola">
+        {% else %}
+            <div class="brand-mark">CE</div>
+        {% endif %}
+        <div>
+            <h2>Centro de Educação Infantil Pedacinho do Céu</h2>
+            <h3>Histórico Escolar / Transferência · Ano letivo {{ aluno.ano_letivo or current_year }}</h3>
+            <p>Documento escolar para acompanhamento da vida acadêmica do aluno</p>
+        </div>
+        <div></div>
+    </div>
+
+    <div class="doc-meta">
+        <div><strong>Aluno</strong>{{ aluno.nome }}</div>
+        <div><strong>Código</strong>{{ aluno.codigo_aluno or '' }}</div>
+        <div><strong>Data de nascimento</strong>{{ aluno.data_nascimento or '' }}</div>
+        <div><strong>Turno</strong>{{ aluno.turma_turno or '' }}</div>
+        <div><strong>Filiação</strong>{{ aluno.nome_pai or '' }} {% if aluno.nome_pai and aluno.nome_mae %} e {% endif %}{{ aluno.nome_mae or '' }}</div>
+        <div><strong>RG / CPF do aluno</strong>{{ aluno.rg_aluno or '' }} {% if aluno.rg_aluno and aluno.cpf_aluno %}·{% endif %} {{ aluno.cpf_aluno or '' }}</div>
+        <div><strong>Série / turma</strong>{{ aluno.turma_serie or '' }} · {{ aluno.turma_nome or '' }}</div>
+        <div><strong>Telefone</strong>{{ aluno.telefone_responsavel or '' }}</div>
+    </div>
+
+    <h3 style="color:var(--azul);margin-top:0;">Histórico de avaliação</h3>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Componente curricular</th>
+                <th>1º Bim</th>
+                <th>2º Bim</th>
+                <th>3º Bim</th>
+                <th>4º Bim</th>
+                <th>Média anual</th>
+                <th>Resultado</th>
+            </tr>
+            {% for item in linhas %}
+            {% set b1 = media_notas(item['b1_n1'], item['b1_n2'], item['b1_n3'], item['b1_n4']) %}
+            {% set b2 = media_notas(item['b2_n1'], item['b2_n2'], item['b2_n3'], item['b2_n4']) %}
+            {% set b3 = media_notas(item['b3_n1'], item['b3_n2'], item['b3_n3'], item['b3_n4']) %}
+            {% set b4 = media_notas(item['b4_n1'], item['b4_n2'], item['b4_n3'], item['b4_n4']) %}
+            {% set anual = media_anual([b1, b2, b3, b4]) %}
+            <tr>
+                <td>{{ item.disciplina_nome }}</td>
+                <td>{{ format_nota(b1) }}</td>
+                <td>{{ format_nota(b2) }}</td>
+                <td>{{ format_nota(b3) }}</td>
+                <td>{{ format_nota(b4) }}</td>
+                <td class="{{ nota_css_class(anual) }}">{{ format_nota(anual) }}</td>
+                <td class="{{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <h3 style="color:var(--azul);margin-top:26px;">Histórico de turmas</h3>
+    <div class="table-wrap">
+        <table>
+            <tr><th>Turma</th><th>Série</th><th>Turno</th><th>Ano letivo</th><th>Início</th><th>Fim</th><th>Observações</th></tr>
+            {% for hist in historico_matriculas %}
+            <tr>
+                <td>{{ hist.turma_nome }}</td>
+                <td>{{ hist.serie }}</td>
+                <td>{{ hist.turno }}</td>
+                <td>{{ hist.ano_letivo }}</td>
+                <td>{{ hist.data_inicio or '' }}</td>
+                <td>{{ hist.data_fim or '' }}</td>
+                <td>{{ hist.observacoes or '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="card" style="margin-top:18px; padding:16px;">
+        <strong>Observações</strong>
+        <p style="margin-top:10px;">
+            Este documento reúne os principais dados escolares do estudante para fins de conferência,
+            transferência e continuidade da vida escolar.
+        </p>
+    </div>
+
+    <div class="signature-row">
+        <div class="signature-line">Secretaria Escolar</div>
+        <div class="signature-line">Direção / Carimbo</div>
+    </div>
+
+    <div style="margin-top:12px;" class="footer-note">
+        Emitido em {{ now_label }}.
+    </div>
+</div>
+{% endblock %}

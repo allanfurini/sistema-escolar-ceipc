@@ -1,0 +1,13 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Como os upgrades preservam dados</h2>
+    <ul>
+        <li>o sistema cria tabelas novas sem apagar as antigas</li>
+        <li>quando surgem campos novos, ele tenta adicionar colunas com ALTER TABLE</li>
+        <li>os alunos antigos continuam, e os novos campos ficam vazios até você editar</li>
+        <li>troca de turma cria novo vínculo e mantém os anos anteriores no histórico</li>
+    </ul>
+</div>
+{% endblock %}

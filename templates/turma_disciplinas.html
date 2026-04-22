@@ -1,19 +1,24 @@
+
 {% extends "base.html" %}
-
 {% block content %}
-<div class="box">
-    <h2>Disciplinas da turma</h2>
-    <p><strong>Turma:</strong> {{ turma.nome }} | <strong>Série:</strong> {{ turma.serie }} | <strong>Turno:</strong> {{ turma.turno }}</p>
-    <p class="muted">Marque somente as disciplinas que pertencem a esta turma. O diário e o boletim mostrarão apenas essas matérias.</p>
-
+<div class="card">
+    <h2 class="section-title">Disciplinas da turma</h2>
+    <p class="subtle">
+        <strong>{{ turma.nome }}</strong> · {{ turma.serie }} · {{ turma.turno }} · Ano letivo {{ turma.ano_letivo }}
+    </p>
     <form method="POST">
-        {% for disciplina in disciplinas %}
-            <label style="font-weight: normal; display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                <input type="checkbox" name="disciplinas" value="{{ disciplina.id }}" {% if disciplina.id in selecionadas %}checked{% endif %} style="width:auto; margin:0;">
-                {{ disciplina.nome }}
+        <div class="grid grid-3">
+            {% for disciplina in disciplinas %}
+            <label style="display:flex;gap:10px;align-items:center;background:#f7f9fd;border:1px solid var(--borda);padding:12px 14px;border-radius:12px;">
+                <input type="checkbox" name="disciplinas" value="{{ disciplina.id }}" {% if disciplina.id in selecionadas %}checked{% endif %} style="width:auto;">
+                <span>{{ disciplina.nome }}</span>
             </label>
-        {% endfor %}
-        <button type="submit">Salvar disciplinas da turma</button>
+            {% endfor %}
+        </div>
+        <div class="actions" style="margin-top:18px;">
+            <button type="submit">Salvar disciplinas da turma</button>
+            <a href="{{ url_for('turmas') }}" class="btn btn-secundario">Voltar</a>
+        </div>
     </form>
 </div>
 {% endblock %}

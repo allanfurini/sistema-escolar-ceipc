@@ -1,46 +1,53 @@
+
 {% extends "base.html" %}
-
 {% block content %}
-<div class="box">
-    <h2>Lançar Nota Simples</h2>
-    <p class="muted">Esta tela antiga foi mantida. Para o lançamento rápido por matéria e por bimestre, use <strong>Diário / Boletim</strong>.</p>
-    <form method="POST">
-        <label>Aluno</label>
-        <select name="aluno_id" required>
-            <option value="">Selecione o aluno</option>
-            {% for aluno in alunos %}
-            <option value="{{ aluno.id }}">{{ aluno.nome }} {% if aluno.turma_nome %}- {{ aluno.turma_nome }}{% endif %}</option>
-            {% endfor %}
-        </select>
-
-        <label>Turma</label>
-        <select name="turma_id" required>
-            <option value="">Selecione a turma</option>
-            {% for turma in turmas %}
-            <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.serie }} - {{ turma.turno }}</option>
-            {% endfor %}
-        </select>
-
-        <label>Disciplina</label>
-        <select name="disciplina_id" required>
-            <option value="">Selecione a disciplina</option>
-            {% for disciplina in disciplinas %}
-            <option value="{{ disciplina.id }}">{{ disciplina.nome }}</option>
-            {% endfor %}
-        </select>
-
-        <label>Bimestre</label>
-        <select name="bimestre" required>
-            <option value="1">1º Bimestre</option>
-            <option value="2">2º Bimestre</option>
-            <option value="3">3º Bimestre</option>
-            <option value="4">4º Bimestre</option>
-        </select>
-
-        <label>Nota</label>
-        <input type="number" name="nota" step="0.1" min="0" max="10" required>
-
-        <button type="submit">Salvar nota simples</button>
+<div class="card">
+    <h2 class="section-title">Lançar nota simples</h2>
+    <p class="subtle">Essa tela continua disponível, mas o ideal da secretaria é usar o Diário / Boletim.</p>
+    <form method="POST" class="grid grid-3">
+        <div>
+            <label>Aluno</label>
+            <select name="aluno_id" required>
+                <option value="">Selecione o aluno</option>
+                {% for aluno in alunos %}
+                <option value="{{ aluno.id }}">{{ aluno.nome }} {% if aluno.turma_nome %}· {{ aluno.turma_nome }}{% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Turma</label>
+            <select name="turma_id" required>
+                <option value="">Selecione a turma</option>
+                {% for turma in turmas %}
+                <option value="{{ turma.id }}">{{ turma.nome }} · {{ turma.serie }} · {{ turma.turno }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Disciplina</label>
+            <select name="disciplina_id" required>
+                <option value="">Selecione a disciplina</option>
+                {% for disciplina in disciplinas %}
+                <option value="{{ disciplina.id }}">{{ disciplina.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Bimestre</label>
+            <select name="bimestre" required>
+                <option value="1">1º Bimestre</option>
+                <option value="2">2º Bimestre</option>
+                <option value="3">3º Bimestre</option>
+                <option value="4">4º Bimestre</option>
+            </select>
+        </div>
+        <div>
+            <label>Nota</label>
+            <input type="number" name="nota" step="0.1" min="0" max="10" required>
+        </div>
+        <div class="actions" style="align-items:end;">
+            <button type="submit">Salvar nota</button>
+        </div>
     </form>
 </div>
 {% endblock %}

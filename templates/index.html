@@ -1,22 +1,42 @@
-{% extends "base.html" %}
 
+{% extends "base.html" %}
 {% block content %}
-<div class="box">
-    <h2>Painel inicial</h2>
-    <p><strong>Total de alunos:</strong> {{ total_alunos }}</p>
-    <p><strong>Total de turmas:</strong> {{ total_turmas }}</p>
-    <p><strong>Total de disciplinas:</strong> {{ total_disciplinas }}</p>
-    <p><strong>Total de notas simples lançadas:</strong> {{ total_notas }}</p>
-    <p><strong>Total de linhas do boletim/diário:</strong> {{ total_boletins }}</p>
+<div class="card">
+    <h2 class="section-title">Painel inicial</h2>
+    <div class="stats">
+        <div class="stat"><div class="label">Alunos ativos</div><div class="value">{{ total_alunos }}</div></div>
+        <div class="stat"><div class="label">Turmas ativas</div><div class="value">{{ total_turmas }}</div></div>
+        <div class="stat"><div class="label">Disciplinas ativas</div><div class="value">{{ total_disciplinas }}</div></div>
+        <div class="stat"><div class="label">Registros de boletim</div><div class="value">{{ total_boletins }}</div></div>
+        <div class="stat"><div class="label">Usuários do sistema</div><div class="value">{{ total_usuarios }}</div></div>
+    </div>
 </div>
 
-<div class="box">
-    <h3>Fluxo recomendado agora</h3>
-    <p>1. Cadastre as turmas</p>
-    <p>2. Cadastre os alunos</p>
-    <p>3. Cadastre as disciplinas</p>
-    <p>4. Em cada turma, marque as disciplinas daquela turma</p>
-    <p>5. Vá em <strong>Diário / Boletim</strong> e lance as notas completas por aluno</p>
-    <p>6. Abra o boletim do aluno e imprima</p>
+<div class="card">
+    <h2 class="section-title">Versão 3</h2>
+    <div class="grid grid-2">
+        <div>
+            <p><strong>Já incluído nesta versão:</strong></p>
+            <ul>
+                <li>login e senha</li>
+                <li>auditoria básica de alterações</li>
+                <li>edição do cadastro do aluno</li>
+                <li>exclusão com confirmação dupla</li>
+                <li>mudança de turma preservando histórico</li>
+                <li>boletim anual com notas, médias e faltas</li>
+                <li>histórico de transferência para impressão</li>
+                <li>backup manual do banco</li>
+            </ul>
+        </div>
+        <div>
+            <p><strong>Importante:</strong></p>
+            <ul>
+                <li>os upgrades agora só acrescentam colunas/tabelas novas</li>
+                <li>cadastros antigos devem continuar no banco</li>
+                <li>campos novos podem ser preenchidos depois na edição</li>
+                <li>o log mostra quem alterou itens principais</li>
+            </ul>
+        </div>
+    </div>
 </div>
 {% endblock %}

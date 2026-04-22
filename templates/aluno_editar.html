@@ -1,0 +1,115 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Editar cadastro do aluno</h2>
+    <p class="subtle">Você pode completar dados antigos sem perder o cadastro e trocar a turma atual preservando o histórico.</p>
+    <form method="POST" class="grid grid-3">
+        <div>
+            <label>Nome completo</label>
+            <input type="text" name="nome" value="{{ aluno.nome or '' }}" required>
+        </div>
+        <div>
+            <label>Data de nascimento</label>
+            <input type="date" name="data_nascimento" value="{{ aluno.data_nascimento or '' }}">
+        </div>
+        <div>
+            <label>Código do aluno</label>
+            <input type="text" name="codigo_aluno" value="{{ aluno.codigo_aluno or '' }}">
+        </div>
+
+        <div>
+            <label>Turma atual</label>
+            <select name="turma_id">
+                <option value="">Sem turma ativa</option>
+                {% for turma in turmas %}
+                <option value="{{ turma.id }}" {% if aluno.turma_id == turma.id %}selected{% endif %}>
+                    {{ turma.nome }} · {{ turma.serie }} · {{ turma.ano_letivo }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Telefone do responsável</label>
+            <input type="text" name="telefone_responsavel" value="{{ aluno.telefone_responsavel or '' }}">
+        </div>
+        <div>
+            <label>E-mail do responsável</label>
+            <input type="email" name="email_responsavel" value="{{ aluno.email_responsavel or '' }}">
+        </div>
+
+        <div>
+            <label>Nome da mãe</label>
+            <input type="text" name="nome_mae" value="{{ aluno.nome_mae or '' }}">
+        </div>
+        <div>
+            <label>CPF da mãe</label>
+            <input type="text" name="cpf_mae" value="{{ aluno.cpf_mae or '' }}">
+        </div>
+        <div>
+            <label>RG da mãe</label>
+            <input type="text" name="rg_mae" value="{{ aluno.rg_mae or '' }}">
+        </div>
+
+        <div>
+            <label>Nome do pai</label>
+            <input type="text" name="nome_pai" value="{{ aluno.nome_pai or '' }}">
+        </div>
+        <div>
+            <label>CPF do pai</label>
+            <input type="text" name="cpf_pai" value="{{ aluno.cpf_pai or '' }}">
+        </div>
+        <div>
+            <label>RG do pai</label>
+            <input type="text" name="rg_pai" value="{{ aluno.rg_pai or '' }}">
+        </div>
+
+        <div>
+            <label>CPF do aluno</label>
+            <input type="text" name="cpf_aluno" value="{{ aluno.cpf_aluno or '' }}">
+        </div>
+        <div>
+            <label>RG do aluno</label>
+            <input type="text" name="rg_aluno" value="{{ aluno.rg_aluno or '' }}">
+        </div>
+        <div style="grid-column:1/-1;">
+            <label>Observações</label>
+            <textarea name="observacoes">{{ aluno.observacoes or '' }}</textarea>
+        </div>
+        <div class="actions" style="grid-column:1/-1;">
+            <button type="submit">Salvar alterações</button>
+            <a href="{{ url_for('alunos') }}" class="btn btn-secundario">Voltar</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h2 class="section-title">Histórico de turmas do aluno</h2>
+    <div class="table-wrap">
+        <table>
+            <tr>
+                <th>Turma</th>
+                <th>Série</th>
+                <th>Turno</th>
+                <th>Ano</th>
+                <th>Início</th>
+                <th>Fim</th>
+                <th>Situação</th>
+                <th>Observações</th>
+            </tr>
+            {% for item in historico_turmas %}
+            <tr>
+                <td>{{ item.turma_nome }}</td>
+                <td>{{ item.serie }}</td>
+                <td>{{ item.turno }}</td>
+                <td>{{ item.ano_letivo }}</td>
+                <td>{{ item.data_inicio or '' }}</td>
+                <td>{{ item.data_fim or '' }}</td>
+                <td>{% if item.ativa %}<span class="pill pill-ok">Ativa</span>{% else %}<span class="pill">Histórico</span>{% endif %}</td>
+                <td>{{ item.observacoes or '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

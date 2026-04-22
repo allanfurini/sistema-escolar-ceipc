@@ -1,22 +1,22 @@
-{% extends "base.html" %}
 
+{% extends "base.html" %}
 {% block content %}
-<div class="box no-print">
-    <h2>Busca ampla</h2>
-    <p class="muted">Você pode buscar por nome do aluno, código, nome da mãe, nome do pai ou telefone.</p>
-    <form method="GET">
-        <label>Pesquisar</label>
-        <input type="text" name="q" value="{{ termo }}" placeholder="Ex.: Dilan, Isabela, telefone, nome do pai...">
-        <button type="submit">Buscar</button>
+<div class="card">
+    <h2 class="section-title">Busca ampla</h2>
+    <p class="subtle">Pesquise por nome do aluno, código, mãe, pai, telefone, CPF, RG, turma ou série.</p>
+    <form method="GET" class="inline-form">
+        <div>
+            <label>Buscar</label>
+            <input type="text" name="q" value="{{ termo }}" placeholder="Digite nome, telefone, CPF, RG...">
+        </div>
+        <div class="actions">
+            <button type="submit">Pesquisar</button>
+        </div>
     </form>
 </div>
 
 {% if termo %}
-<div class="box">
-    <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-        <h2>Resultados para: {{ termo }}</h2>
-        <button class="btn btn-imprimir" onclick="window.print()">Imprimir resultados</button>
-    </div>
+<div class="card">
     <div class="table-wrap">
         <table>
             <tr>
@@ -24,9 +24,11 @@
                 <th>Código</th>
                 <th>Turma</th>
                 <th>Série</th>
+                <th>Ano</th>
                 <th>Mãe</th>
                 <th>Pai</th>
                 <th>Telefone</th>
+                <th>CPF/RG aluno</th>
                 <th>Ações</th>
             </tr>
             {% for item in resultados %}
@@ -35,10 +37,17 @@
                 <td>{{ item.codigo_aluno or '' }}</td>
                 <td>{{ item.turma_nome or '' }}</td>
                 <td>{{ item.turma_serie or '' }}</td>
+                <td>{{ item.ano_letivo or '' }}</td>
                 <td>{{ item.nome_mae or '' }}</td>
                 <td>{{ item.nome_pai or '' }}</td>
                 <td>{{ item.telefone_responsavel or '' }}</td>
-                <td><a class="btn btn-secundario" href="/boletim/{{ item.id }}">Boletim</a></td>
+                <td>{{ item.cpf_aluno or '' }} {% if item.cpf_aluno and item.rg_aluno %}·{% endif %} {{ item.rg_aluno or '' }}</td>
+                <td>
+                    <div class="actions">
+                        <a class="btn btn-secundario" href="{{ url_for('editar_aluno', aluno_id=item.id) }}">Editar</a>
+                        <a class="btn btn-secundario" href="{{ url_for('boletim', aluno_id=item.id) }}">Boletim</a>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </table>

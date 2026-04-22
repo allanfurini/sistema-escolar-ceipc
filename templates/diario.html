@@ -1,154 +1,137 @@
+
 {% extends "base.html" %}
+{% block head %}
+<script>
+document.addEventListener("keydown", function(e) {
+    if (!e.target.classList.contains("nota-input")) return;
+    const inputs = Array.from(document.querySelectorAll(".nota-input"));
+    const index = inputs.indexOf(e.target);
+    if (index === -1) return;
 
+    if (e.key === "ArrowRight" || e.key === "Enter") {
+        e.preventDefault();
+        const next = inputs[index + 1];
+        if (next) next.focus();
+    }
+    if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const prev = inputs[index - 1];
+        if (prev) prev.focus();
+    }
+    if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const cols = parseInt(e.target.dataset.cols || "0");
+        const next = inputs[index + cols];
+        if (next) next.focus();
+    }
+    if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const cols = parseInt(e.target.dataset.cols || "0");
+        const prev = inputs[index - cols];
+        if (prev) prev.focus();
+    }
+});
+</script>
+{% endblock %}
 {% block content %}
-<div class="box no-print">
-    <h2>Diário / Boletim</h2>
-    <p class="muted">Escolha a turma e o aluno. Depois o sistema abre a tabela completa para digitar as notas, faltas e médias automaticamente.</p>
+<div class="card">
+    <h2 class="section-title">Diário / Boletim</h2>
+    <p class="subtle">Lançamento rápido com setas do teclado. Direita/Enter avança, esquerda volta, cima/baixo muda a linha.</p>
 
-    <form method="GET">
-        <label>Turma</label>
-        <select name="turma_id" onchange="this.form.submit()">
-            <option value="">Selecione a turma</option>
-            {% for turma in turmas %}
-            <option value="{{ turma.id }}" {% if turma_id == turma.id|string %}selected{% endif %}>
-                {{ turma.nome }} - {{ turma.serie }} - {{ turma.turno }}
-            </option>
-            {% endfor %}
-        </select>
-
-        <label>Aluno</label>
-        <select name="aluno_id" onchange="this.form.submit()">
-            <option value="">Selecione o aluno</option>
-            {% for aluno_item in alunos %}
-            <option value="{{ aluno_item.id }}" {% if aluno_id == aluno_item.id|string %}selected{% endif %}>{{ aluno_item.nome }}</option>
-            {% endfor %}
-        </select>
-
-        <noscript><button type="submit">Abrir</button></noscript>
+    <form method="GET" class="inline-form">
+        <div>
+            <label>Turma</label>
+            <select name="turma_id" onchange="this.form.submit()">
+                <option value="">Selecione uma turma</option>
+                {% for turma in turmas %}
+                <option value="{{ turma.id }}" {% if turma_id == turma.id|string %}selected{% endif %}>
+                    {{ turma.nome }} · {{ turma.serie }} · {{ turma.ano_letivo }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Aluno</label>
+            <select name="aluno_id" onchange="this.form.submit()">
+                <option value="">Selecione o aluno</option>
+                {% for aluno_loop in alunos %}
+                <option value="{{ aluno_loop.id }}" {% if aluno_id == aluno_loop.id|string %}selected{% endif %}>
+                    {{ aluno_loop.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="actions">
+            <button type="submit">Abrir diário</button>
+        </div>
     </form>
 </div>
 
 {% if aluno %}
-<div class="box">
-    <div class="grid-2">
-        <div>
-            <h2>{{ aluno.nome }}</h2>
-            <p><strong>Turma:</strong> {{ aluno.turma_nome }}</p>
-            <p><strong>Série:</strong> {{ aluno.turma_serie }}</p>
-            <p><strong>Turno:</strong> {{ aluno.turma_turno }}</p>
-        </div>
-        <div class="no-print" style="display:flex; align-items:flex-start; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
-            <a class="btn btn-imprimir" href="/boletim/{{ aluno.id }}" target="_blank">Abrir boletim para imprimir</a>
-        </div>
+<div class="card">
+    <div class="grid grid-4">
+        <div><strong>Aluno:</strong><br>{{ aluno.nome }}</div>
+        <div><strong>Turma:</strong><br>{{ aluno.turma_nome }}</div>
+        <div><strong>Série:</strong><br>{{ aluno.turma_serie }}</div>
+        <div><strong>Ano letivo:</strong><br>{{ aluno.ano_letivo }}</div>
+    </div>
+    <div class="actions" style="margin-top:16px;">
+        <a class="btn btn-verde" href="{{ url_for('boletim', aluno_id=aluno.id) }}">Ver boletim anual</a>
+        <a class="btn btn-secundario" href="{{ url_for('historico_transferencia', aluno_id=aluno.id) }}">Histórico de transferência</a>
     </div>
 </div>
 
-<div class="box">
-    <form method="POST">
-        <input type="hidden" name="turma_id" value="{{ turma_id }}">
-        <input type="hidden" name="aluno_id" value="{{ aluno_id }}">
+<form method="POST">
+    <input type="hidden" name="turma_id" value="{{ turma_id }}">
+    <input type="hidden" name="aluno_id" value="{{ aluno_id }}">
 
-        {% if disciplinas_linhas %}
+    <div class="card">
+        <h2 class="section-title">Lançamento completo por disciplina</h2>
         <div class="table-wrap">
-            <table id="diario-table">
+            <table class="diario-table">
                 <tr>
-                    <th rowspan="2" class="w-140">Disciplina</th>
-                    <th colspan="6">1º Bimestre</th>
-                    <th colspan="6">2º Bimestre</th>
-                    <th colspan="6">3º Bimestre</th>
-                    <th colspan="6">4º Bimestre</th>
-                    <th rowspan="2" class="w-95">Média Anual</th>
+                    <th rowspan="2">Componente curricular</th>
+                    <th colspan="5">1º Bimestre</th>
+                    <th colspan="5">2º Bimestre</th>
+                    <th colspan="5">3º Bimestre</th>
+                    <th colspan="5">4º Bimestre</th>
+                    <th rowspan="2">Média Anual</th>
+                    <th rowspan="2">Resultado</th>
                 </tr>
                 <tr>
                     {% for _ in range(4) %}
-                        <th class="w-80">N1</th>
-                        <th class="w-80">N2</th>
-                        <th class="w-80">N3</th>
-                        <th class="w-80">N4</th>
-                        <th class="w-80">Média</th>
-                        <th class="w-80">Faltas</th>
+                    <th>Nota 1</th><th>Nota 2</th><th>Nota 3</th><th>Nota 4</th><th>Faltas</th>
                     {% endfor %}
                 </tr>
-
+                {% set total_cols = 20 %}
                 {% for linha in disciplinas_linhas %}
                 {% set item = linha.item %}
-                {% set m1 = media_notas(item.b1_n1 if item else none, item.b1_n2 if item else none, item.b1_n3 if item else none, item.b1_n4 if item else none) %}
-                {% set m2 = media_notas(item.b2_n1 if item else none, item.b2_n2 if item else none, item.b2_n3 if item else none, item.b2_n4 if item else none) %}
-                {% set m3 = media_notas(item.b3_n1 if item else none, item.b3_n2 if item else none, item.b3_n3 if item else none, item.b3_n4 if item else none) %}
-                {% set m4 = media_notas(item.b4_n1 if item else none, item.b4_n2 if item else none, item.b4_n3 if item else none, item.b4_n4 if item else none) %}
-                {% set ma = media_anual([m1, m2, m3, m4]) %}
+                {% set b1 = media_notas(item['b1_n1'] if item else None, item['b1_n2'] if item else None, item['b1_n3'] if item else None, item['b1_n4'] if item else None) %}
+                {% set b2 = media_notas(item['b2_n1'] if item else None, item['b2_n2'] if item else None, item['b2_n3'] if item else None, item['b2_n4'] if item else None) %}
+                {% set b3 = media_notas(item['b3_n1'] if item else None, item['b3_n2'] if item else None, item['b3_n3'] if item else None, item['b3_n4'] if item else None) %}
+                {% set b4 = media_notas(item['b4_n1'] if item else None, item['b4_n2'] if item else None, item['b4_n3'] if item else None, item['b4_n4'] if item else None) %}
+                {% set anual = media_anual([b1, b2, b3, b4]) %}
                 <tr>
                     <td><strong>{{ linha.disciplina.nome }}</strong></td>
-
-                    {% for campo in ['b1_n1','b1_n2','b1_n3','b1_n4'] %}
-                    <td><input class="grade-input w-80" type="number" step="0.1" min="0" max="10" name="{{ linha.disciplina.id }}_{{ campo }}" value="{{ item[campo] if item and item[campo] is not none else '' }}"></td>
+                    {% for campo in ['b1_n1','b1_n2','b1_n3','b1_n4','b1_faltas','b2_n1','b2_n2','b2_n3','b2_n4','b2_faltas','b3_n1','b3_n2','b3_n3','b3_n4','b3_faltas','b4_n1','b4_n2','b4_n3','b4_n4','b4_faltas'] %}
+                    <td>
+                        <input class="nota-input" data-cols="{{ total_cols }}" type="number"
+                               step="{% if 'faltas' in campo %}1{% else %}0.1{% endif %}"
+                               {% if 'faltas' in campo %}min="0"{% else %}min="0" max="10"{% endif %}
+                               name="{{ linha.disciplina.id }}_{{ campo }}"
+                               value="{{ item[campo] if item and item[campo] is not none else '' }}">
+                    </td>
                     {% endfor %}
-                    <td class="center {% if m1 is not none and m1 >= 7 %}nota-aprovada{% elif m1 is not none %}nota-reprovada{% endif %}">{{ m1 if m1 is not none else '' }}</td>
-                    <td><input class="grade-input w-80" type="number" min="0" name="{{ linha.disciplina.id }}_b1_faltas" value="{{ item.b1_faltas if item and item.b1_faltas is not none else '' }}"></td>
-
-                    {% for campo in ['b2_n1','b2_n2','b2_n3','b2_n4'] %}
-                    <td><input class="grade-input w-80" type="number" step="0.1" min="0" max="10" name="{{ linha.disciplina.id }}_{{ campo }}" value="{{ item[campo] if item and item[campo] is not none else '' }}"></td>
-                    {% endfor %}
-                    <td class="center {% if m2 is not none and m2 >= 7 %}nota-aprovada{% elif m2 is not none %}nota-reprovada{% endif %}">{{ m2 if m2 is not none else '' }}</td>
-                    <td><input class="grade-input w-80" type="number" min="0" name="{{ linha.disciplina.id }}_b2_faltas" value="{{ item.b2_faltas if item and item.b2_faltas is not none else '' }}"></td>
-
-                    {% for campo in ['b3_n1','b3_n2','b3_n3','b3_n4'] %}
-                    <td><input class="grade-input w-80" type="number" step="0.1" min="0" max="10" name="{{ linha.disciplina.id }}_{{ campo }}" value="{{ item[campo] if item and item[campo] is not none else '' }}"></td>
-                    {% endfor %}
-                    <td class="center {% if m3 is not none and m3 >= 7 %}nota-aprovada{% elif m3 is not none %}nota-reprovada{% endif %}">{{ m3 if m3 is not none else '' }}</td>
-                    <td><input class="grade-input w-80" type="number" min="0" name="{{ linha.disciplina.id }}_b3_faltas" value="{{ item.b3_faltas if item and item.b3_faltas is not none else '' }}"></td>
-
-                    {% for campo in ['b4_n1','b4_n2','b4_n3','b4_n4'] %}
-                    <td><input class="grade-input w-80" type="number" step="0.1" min="0" max="10" name="{{ linha.disciplina.id }}_{{ campo }}" value="{{ item[campo] if item and item[campo] is not none else '' }}"></td>
-                    {% endfor %}
-                    <td class="center {% if m4 is not none and m4 >= 7 %}nota-aprovada{% elif m4 is not none %}nota-reprovada{% endif %}">{{ m4 if m4 is not none else '' }}</td>
-                    <td><input class="grade-input w-80" type="number" min="0" name="{{ linha.disciplina.id }}_b4_faltas" value="{{ item.b4_faltas if item and item.b4_faltas is not none else '' }}"></td>
-
-                    <td class="center {% if ma is not none and ma >= 7 %}nota-aprovada{% elif ma is not none %}nota-reprovada{% endif %}">{{ ma if ma is not none else '' }}</td>
+                    <td class="{{ nota_css_class(anual) }}">{{ format_nota(anual) }}</td>
+                    <td class="{{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
-
-        <div class="no-print" style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button type="submit">Salvar diário completo</button>
-            <a class="btn btn-imprimir" href="/boletim/{{ aluno.id }}" target="_blank">Ver boletim</a>
+        <div class="actions" style="margin-top:18px;">
+            <button type="submit">Salvar diário do aluno</button>
         </div>
-        {% else %}
-        <p>Nenhuma disciplina foi vinculada a essa turma ainda. Vá em <strong>Turmas &gt; Disciplinas da turma</strong> e marque as matérias.</p>
-        {% endif %}
-    </form>
-</div>
-
-<script>
-(function() {
-    const inputs = Array.from(document.querySelectorAll('.grade-input'));
-    inputs.forEach((input, index) => {
-        input.addEventListener('keydown', function(e) {
-            const colCount = 25; // 24 campos editáveis + 1 média não editável por linha (aproximação para navegação vertical)
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (inputs[index + 1]) inputs[index + 1].focus();
-            }
-            if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                if (inputs[index + 1]) inputs[index + 1].focus();
-            }
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                if (inputs[index - 1]) inputs[index - 1].focus();
-            }
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (inputs[index + 20]) inputs[index + 20].focus();
-            }
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (inputs[index - 20]) inputs[index - 20].focus();
-            }
-        });
-    });
-})();
-</script>
+    </div>
+</form>
 {% endif %}
 {% endblock %}
