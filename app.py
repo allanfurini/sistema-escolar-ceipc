@@ -1266,12 +1266,27 @@ def historico_transferencia(aluno_id):
         FROM matriculas
         INNER JOIN turmas ON turmas.id = matriculas.turma_id
         WHERE matriculas.aluno_id = ?
-        ORDER BY turmas.ano_letivo DESC, matriculas.id DESC
+        ORDER BY turmas.ano_letivo ASC, matriculas.id ASC
+        """,
+        (aluno_id,)
+    ).fetchall()
+
+    historico_externo = conn.execute(
+        """
+        SELECT * FROM historico_externo
+        WHERE aluno_id = ?
+        ORDER BY ano_letivo ASC, serie ASC, disciplina ASC, id ASC
         """,
         (aluno_id,)
     ).fetchall()
     conn.close()
-    return render_template("historico_transferencia.html", aluno=aluno, linhas=linhas, historico_matriculas=historico_matriculas)
+    return render_template(
+        "historico_transferencia.html",
+        aluno=aluno,
+        linhas=linhas,
+        historico_matriculas=historico_matriculas,
+        historico_externo=historico_externo,
+    )
 
 
 @app.route("/buscar")
