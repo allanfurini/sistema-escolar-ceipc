@@ -78,6 +78,7 @@ document.addEventListener("keydown", function(e) {
     <div class="actions" style="margin-top:16px;">
         <a class="btn btn-verde" href="{{ url_for('boletim', aluno_id=aluno.id) }}">Ver boletim anual</a>
         <a class="btn btn-secundario" href="{{ url_for('historico_transferencia', aluno_id=aluno.id) }}">Histórico de transferência</a>
+        {% if turma_id %}<a class="btn btn-secundario" href="{{ url_for('boletins_turma', turma_id=turma_id) }}" target="_blank">Imprimir boletins da turma</a>{% endif %}
     </div>
 </div>
 
@@ -91,19 +92,19 @@ document.addEventListener("keydown", function(e) {
             <table class="diario-table">
                 <tr>
                     <th rowspan="2">Componente curricular</th>
-                    <th colspan="5">1º Bimestre</th>
-                    <th colspan="5">2º Bimestre</th>
-                    <th colspan="5">3º Bimestre</th>
-                    <th colspan="5">4º Bimestre</th>
+                    <th colspan="6">1º Bimestre</th>
+                    <th colspan="6">2º Bimestre</th>
+                    <th colspan="6">3º Bimestre</th>
+                    <th colspan="6">4º Bimestre</th>
                     <th rowspan="2">Média Anual</th>
                     <th rowspan="2">Resultado</th>
                 </tr>
                 <tr>
                     {% for _ in range(4) %}
-                    <th>Nota 1</th><th>Nota 2</th><th>Nota 3</th><th>Nota 4</th><th>Faltas</th>
+                    <th>Nota 1</th><th>Nota 2</th><th>Nota 3</th><th>Nota 4</th><th>Média</th><th>Faltas</th>
                     {% endfor %}
                 </tr>
-                {% set total_cols = 20 %}
+                {% set total_cols = 24 %}
                 {% for linha in disciplinas_linhas %}
                 {% set item = linha.item %}
                 {% set b1 = media_notas(item['b1_n1'] if item else None, item['b1_n2'] if item else None, item['b1_n3'] if item else None, item['b1_n4'] if item else None) %}
@@ -113,13 +114,20 @@ document.addEventListener("keydown", function(e) {
                 {% set anual = media_anual([b1, b2, b3, b4]) %}
                 <tr>
                     <td><strong>{{ linha.disciplina.nome }}</strong></td>
-                    {% for campo in ['b1_n1','b1_n2','b1_n3','b1_n4','b1_faltas','b2_n1','b2_n2','b2_n3','b2_n4','b2_faltas','b3_n1','b3_n2','b3_n3','b3_n4','b3_faltas','b4_n1','b4_n2','b4_n3','b4_n4','b4_faltas'] %}
+                    {% for prefixo, media in [('b1', b1), ('b2', b2), ('b3', b3), ('b4', b4)] %}
+                    {% for campo in [prefixo ~ '_n1', prefixo ~ '_n2', prefixo ~ '_n3', prefixo ~ '_n4'] %}
                     <td>
                         <input class="nota-input" data-cols="{{ total_cols }}" type="number"
-                               step="{% if 'faltas' in campo %}1{% else %}0.1{% endif %}"
-                               {% if 'faltas' in campo %}min="0"{% else %}min="0" max="10"{% endif %}
+                               step="0.1" min="0" max="10"
                                name="{{ linha.disciplina.id }}_{{ campo }}"
                                value="{{ item[campo] if item and item[campo] is not none else '' }}">
+                    </td>
+                    {% endfor %}
+                    <td class="{{ nota_css_class(media) }}">{{ format_nota(media) }}</td>
+                    <td>
+                        <input class="nota-input" data-cols="{{ total_cols }}" type="number" step="1" min="0"
+                               name="{{ linha.disciplina.id }}_{{ prefixo }}_faltas"
+                               value="{{ item[prefixo ~ '_faltas'] if item and item[prefixo ~ '_faltas'] is not none else '' }}">
                     </td>
                     {% endfor %}
                     <td class="{{ nota_css_class(anual) }}">{{ format_nota(anual) }}</td>

@@ -56,9 +56,12 @@
         table { width:100%; border-collapse:collapse; background:#fff; }
         th, td { border:1px solid #d8e0eb; padding:10px 10px; text-align:left; vertical-align:top; font-size:14px; }
         th { background:var(--azul); color:white; position:sticky; top:0; z-index:1; }
-        .doc-table th, .doc-table td { font-size:11px; padding:5px 6px; text-align:center; }
+        .doc-table th, .doc-table td { font-size:10px; padding:4px 4px; text-align:center; word-break:break-word; }
         .doc-table td:first-child, .doc-table th:first-child { text-align:left; }
         .table-wrap { overflow-x:auto; }
+        .table-wrap-print { overflow:visible; }
+        .report-sheet { width:100%; }
+        .page-break { break-after: page; page-break-after: always; }
         .flash { background:#e9f8ef; border:1px solid #a8ddb7; color:#116329; padding:13px 14px; border-radius:12px; margin-bottom:16px; }
         .warning { background:#fff7e6; border:1px solid #f5d38a; color:#7a5300; padding:13px 14px; border-radius:12px; margin-bottom:16px; }
         .danger { background:#fff0f0; border:1px solid #f4b4b4; color:#8a1c1c; padding:13px 14px; border-radius:12px; }
@@ -77,7 +80,7 @@
         .diario-table td:first-child, .diario-table th:first-child { text-align:left; position:sticky; left:0; z-index:2; background:white; }
         .diario-table th:first-child { background:var(--azul); color:white; }
         .header-doc { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px; margin-bottom:18px; }
-        .header-doc img { width:90px; height:90px; object-fit:contain; }
+        .header-doc img { width:84px; height:84px; object-fit:contain; }
         .header-doc .brand-mark { width:90px; height:90px; font-size:32px; border-radius:24px; }
         .header-doc h2 { margin:0; color:var(--azul); font-size:30px; }
         .header-doc h3 { margin:6px 0 0; color:#3c4f74; font-size:18px; }
@@ -93,7 +96,7 @@
             .menu { padding-bottom:12px; }
         }
         @media print {
-            @page { size:A4 landscape; margin:8mm; }
+            @page { size:A4 landscape; margin:5mm; }
             body { background:white; font-size:11px; }
             .topbar, .menu, .no-print, .flash, .warning, .danger { display:none !important; }
             .container { margin:0; max-width:none; padding:0; }
@@ -102,14 +105,14 @@
             th { position:static; }
             a { text-decoration:none; color:inherit; }
             .table-wrap { overflow:visible !important; }
-            .doc-meta { grid-template-columns:repeat(4, 1fr); gap:6px 10px; }
-            .doc-meta div { padding:6px 8px; }
-            .header-doc h2 { font-size:22px; }
-            .header-doc h3 { font-size:14px; }
-            .header-doc img, .header-doc .brand-mark { width:62px; height:62px; }
-            .signature-row { margin-top:20px; }
-            .footer-note { font-size:10px; }
-            .doc-table th, .doc-table td { font-size:9px; padding:3px 4px; }
+            .doc-meta { grid-template-columns:repeat(4, 1fr); gap:4px 6px; }
+            .doc-meta div { padding:4px 6px; font-size:10px; }
+            .header-doc h2 { font-size:18px; }
+            .header-doc h3 { font-size:11px; }
+            .header-doc img, .header-doc .brand-mark { width:48px; height:48px; }
+            .signature-row { margin-top:10px; }
+            .footer-note { font-size:9px; }
+            .doc-table th, .doc-table td { font-size:7px; padding:2px 2px; }
         }
     </style>
     {% block head %}{% endblock %}

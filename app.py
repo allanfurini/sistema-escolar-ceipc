@@ -2,6 +2,9 @@
 import os
 import io
 import sqlite3
+import secrets
+import smtplib
+from email.message import EmailMessage
 from datetime import datetime
 from functools import wraps
 
@@ -25,7 +28,7 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
 
 DEFAULT_SETTINGS = {
-    "school_name": "Centro de Educação Infantil Pedacinho do Céu",
+    "school_name": "Centro de Educação Integrado Pedacinho do Céu",
     "school_subtitle": "Sistema Escolar CEIPC",
     "report_title": "Boletim Escolar",
     "city": "Rondonópolis - MT",
@@ -183,14 +186,48 @@ def init_db():
     """)
 
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_externo (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aluno_id INTEGER NOT NULL,
+        ano_letivo TEXT,
+        escola TEXT,
+        municipio TEXT,
+        uf TEXT,
+        serie TEXT,
+        turma TEXT,
+        turno TEXT,
+        disciplina TEXT NOT NULL,
+        nota_final TEXT,
+        carga_horaria TEXT,
+        faltas TEXT,
+        resultado TEXT,
+        observacoes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    )
+    """)
+
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         nome TEXT NOT NULL,
+        email TEXT,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'secretaria',
         ativo INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        usado INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
     )
     """)
 
@@ -219,6 +256,7 @@ def init_db():
         ("cpf_pai", "TEXT"),
         ("rg_pai", "TEXT"),
         ("email_responsavel", "TEXT"),
+        ("foto_path", "TEXT"),
         ("ativo", "INTEGER DEFAULT 1"),
         ("created_at", "TEXT"),
     ]:
@@ -242,6 +280,11 @@ def init_db():
         ("ativa", "INTEGER DEFAULT 1"),
     ]:
         ensure_column(cursor, "disciplinas", column_name, column_type)
+
+    for column_name, column_type in [
+        ("email", "TEXT"),
+    ]:
+        ensure_column(cursor, "users", column_name, column_type)
 
     # Corrige registros antigos sem valor nas novas colunas
     cursor.execute("UPDATE alunos SET ativo = 1 WHERE ativo IS NULL")
@@ -326,6 +369,50 @@ def save_logo_file(file_storage):
     destination = os.path.join(STATIC_DIR, "logo-escola.png")
     file_storage.save(destination)
     return True
+
+
+def save_aluno_photo(file_storage, aluno_id):
+    if not file_storage or not file_storage.filename:
+        return None
+    ext = os.path.splitext(file_storage.filename)[1].lower()
+    if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
+        ext = ".png"
+    upload_dir = os.path.join(STORAGE_DIR, "uploads", "alunos")
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = f"aluno_{aluno_id}{ext}"
+    path = os.path.join(upload_dir, filename)
+    file_storage.save(path)
+    return f"alunos/{filename}"
+
+
+def send_password_reset_email(user, token):
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    smtp_from = os.environ.get("SMTP_FROM", smtp_user or "")
+    if not smtp_host or not smtp_user or not smtp_password or not smtp_from or not user["email"]:
+        return False
+    link = url_for("redefinir_senha", token=token, _external=True)
+    msg = EmailMessage()
+    msg["Subject"] = "Recuperação de senha - Sistema Escolar CEIPC"
+    msg["From"] = smtp_from
+    msg["To"] = user["email"]
+    msg.set_content(f"Olá, {user['nome']}.\n\nClique no link abaixo para redefinir sua senha:\n{link}\n\nSe você não pediu isso, ignore este e-mail.")
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
+    return True
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    safe_base = os.path.abspath(os.path.join(STORAGE_DIR, "uploads"))
+    full_path = os.path.abspath(os.path.join(safe_base, filename))
+    if not full_path.startswith(safe_base) or not os.path.exists(full_path):
+        abort(404)
+    return send_file(full_path)
 
 
 def current_timestamp():
@@ -484,6 +571,57 @@ def admin_required(view):
     return wrapped_view
 
 
+@app.route("/recuperar-senha", methods=["GET", "POST"])
+def recuperar_senha():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        conn = get_connection()
+        user = conn.execute("SELECT * FROM users WHERE email = ? AND ativo = 1", (email,)).fetchone()
+        if user:
+            token = secrets.token_urlsafe(32)
+            conn.execute("INSERT INTO password_reset_tokens (user_id, token) VALUES (?, ?)", (user["id"], token))
+            conn.commit()
+            enviado = send_password_reset_email(user, token)
+            if enviado:
+                flash("Enviamos um link de recuperação para o e-mail cadastrado.")
+            else:
+                flash("A recuperação por e-mail precisa de SMTP configurado no Render. Peça a um administrador para trocar sua senha.")
+        else:
+            flash("Se existir usuário ativo com esse e-mail, as instruções serão enviadas.")
+        conn.close()
+        return redirect(url_for("login"))
+    return render_template("recuperar_senha.html")
+
+
+@app.route("/redefinir-senha/<token>", methods=["GET", "POST"])
+def redefinir_senha(token):
+    conn = get_connection()
+    row = conn.execute("""
+        SELECT password_reset_tokens.*, users.username, users.nome
+        FROM password_reset_tokens
+        INNER JOIN users ON users.id = password_reset_tokens.user_id
+        WHERE token = ? AND usado = 0 AND users.ativo = 1
+    """, (token,)).fetchone()
+    if not row:
+        conn.close()
+        flash("Link de recuperação inválido ou já utilizado.")
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        senha = request.form.get("senha", "")
+        senha2 = request.form.get("senha2", "")
+        if len(senha) < 6 or senha != senha2:
+            flash("A senha deve ter pelo menos 6 caracteres e as duas senhas devem ser iguais.")
+        else:
+            conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(senha), row["user_id"]))
+            conn.execute("UPDATE password_reset_tokens SET usado = 1 WHERE id = ?", (row["id"],))
+            conn.commit()
+            conn.close()
+            flash("Senha redefinida com sucesso. Faça login com a nova senha.")
+            return redirect(url_for("login"))
+    conn.close()
+    return render_template("redefinir_senha.html", token=token, usuario=row)
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if g.user:
@@ -577,6 +715,54 @@ def turmas():
     return render_template("turmas.html", turmas=lista_turmas)
 
 
+@app.route("/turmas/<int:turma_id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_turma(turma_id):
+    conn = get_connection()
+    turma = conn.execute("SELECT * FROM turmas WHERE id = ? AND ativa = 1", (turma_id,)).fetchone()
+    if not turma:
+        conn.close()
+        flash("Turma não encontrada.")
+        return redirect(url_for("turmas"))
+    if request.method == "POST":
+        nome = request.form.get("nome", "").strip()
+        serie = request.form.get("serie", "").strip()
+        turno = request.form.get("turno", "").strip()
+        ano_letivo = request.form.get("ano_letivo", "").strip()
+        if nome and serie and turno and ano_letivo:
+            conn.execute("UPDATE turmas SET nome = ?, serie = ?, turno = ?, ano_letivo = ? WHERE id = ?",
+                         (nome, serie, turno, ano_letivo, turma_id))
+            conn.commit()
+            conn.close()
+            log_action("EDITAR_TURMA", "turmas", turma_id, f"{nome} / {serie} / {ano_letivo}")
+            flash("Turma atualizada com sucesso.")
+            return redirect(url_for("turmas"))
+        flash("Preencha todos os campos da turma.")
+    conn.close()
+    return render_template("turma_editar.html", turma=turma)
+
+
+@app.route("/turmas/<int:turma_id>/excluir", methods=["POST"])
+@admin_required
+def excluir_turma(turma_id):
+    confirmacao = request.form.get("confirmacao", "").strip().upper()
+    if confirmacao != "EXCLUIR":
+        flash("Para excluir/desativar a turma, digite EXCLUIR no campo de confirmação.")
+        return redirect(url_for("turmas"))
+    conn = get_connection()
+    turma = conn.execute("SELECT * FROM turmas WHERE id = ?", (turma_id,)).fetchone()
+    if not turma:
+        conn.close()
+        flash("Turma não encontrada.")
+        return redirect(url_for("turmas"))
+    conn.execute("UPDATE turmas SET ativa = 0 WHERE id = ?", (turma_id,))
+    conn.commit()
+    conn.close()
+    log_action("EXCLUIR_TURMA", "turmas", turma_id, f"Turma {turma['nome']} desativada")
+    flash("Turma desativada com sucesso. Os históricos dos alunos não foram apagados.")
+    return redirect(url_for("turmas"))
+
+
 @app.route("/turmas/<int:turma_id>/disciplinas", methods=["GET", "POST"])
 @login_required
 def turma_disciplinas(turma_id):
@@ -660,6 +846,9 @@ def alunos():
                 ),
             )
             aluno_id = cursor.lastrowid
+            foto_path = save_aluno_photo(request.files.get("foto_aluno"), aluno_id)
+            if foto_path:
+                conn.execute("UPDATE alunos SET foto_path = ? WHERE id = ?", (foto_path, aluno_id))
             if turma_id:
                 atualizar_turma_aluno(conn, aluno_id, turma_id, "Vínculo inicial do aluno")
             conn.commit()
@@ -739,6 +928,9 @@ def editar_aluno(aluno_id):
             )
         )
 
+        foto_path = save_aluno_photo(request.files.get("foto_aluno"), aluno_id)
+        if foto_path:
+            conn.execute("UPDATE alunos SET foto_path = ? WHERE id = ?", (foto_path, aluno_id))
         atualizar_turma_aluno(conn, aluno_id, nova_turma_id, "Alteração de turma no cadastro do aluno")
         conn.commit()
         log_action("EDITAR_ALUNO", "alunos", aluno_id, f"Cadastro atualizado: {payload['nome']}")
@@ -1092,10 +1284,11 @@ def buscar():
         like = f"%{termo}%"
         resultados = conn.execute(
             """
-            SELECT alunos.id, alunos.nome, alunos.codigo_aluno, alunos.nome_mae, alunos.nome_pai,
+            SELECT alunos.id, alunos.nome, alunos.codigo_aluno, alunos.foto_path, alunos.nome_mae, alunos.nome_pai,
                    alunos.telefone_responsavel, alunos.cpf_aluno, alunos.rg_aluno,
                    alunos.cpf_mae, alunos.rg_mae, alunos.cpf_pai, alunos.rg_pai,
-                   turmas.nome AS turma_nome, turmas.serie AS turma_serie, turmas.ano_letivo
+                   turmas.nome AS turma_nome, turmas.serie AS turma_serie, turmas.ano_letivo,
+                   (SELECT COUNT(*) FROM ocorrencias WHERE ocorrencias.aluno_id = alunos.id) AS ocorrencias_count
             FROM alunos
             LEFT JOIN matriculas ON matriculas.aluno_id = alunos.id AND matriculas.ativa = 1
             LEFT JOIN turmas ON turmas.id = matriculas.turma_id
@@ -1130,16 +1323,17 @@ def admin_usuarios():
         nome = request.form.get("nome", "").strip()
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
+        email = request.form.get("email", "").strip()
         role = request.form.get("role", "secretaria").strip()
 
         if nome and username and password:
             try:
                 cursor = conn.execute(
                     """
-                    INSERT INTO users (nome, username, password_hash, role)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO users (nome, username, email, password_hash, role)
+                    VALUES (?, ?, ?, ?, ?)
                     """,
-                    (nome, username, generate_password_hash(password), role)
+                    (nome, username, email, generate_password_hash(password), role)
                 )
                 conn.commit()
                 log_action("CRIAR_USUARIO", "users", cursor.lastrowid, f"Usuário {username} criado")
@@ -1152,7 +1346,7 @@ def admin_usuarios():
             flash("Preencha nome, login e senha.")
 
     usuarios = conn.execute(
-        "SELECT id, nome, username, role, ativo, created_at FROM users ORDER BY nome ASC"
+        "SELECT id, nome, username, email, role, ativo, created_at FROM users ORDER BY nome ASC"
     ).fetchall()
     logs = conn.execute(
         "SELECT * FROM audit_logs ORDER BY id DESC LIMIT 100"
@@ -1173,6 +1367,7 @@ def admin_usuario_editar(user_id):
 
     nome = request.form.get("nome", "").strip()
     username = request.form.get("username", "").strip()
+    email = request.form.get("email", "").strip()
     role = request.form.get("role", "secretaria").strip()
     ativo = 1 if request.form.get("ativo") == "1" else 0
     nova_senha = request.form.get("password", "")
@@ -1189,11 +1384,11 @@ def admin_usuario_editar(user_id):
         return redirect(url_for("admin_usuarios"))
 
     if nova_senha:
-        conn.execute("UPDATE users SET nome = ?, username = ?, role = ?, ativo = ?, password_hash = ? WHERE id = ?",
-                     (nome, username, role, ativo, generate_password_hash(nova_senha), user_id))
+        conn.execute("UPDATE users SET nome = ?, username = ?, email = ?, role = ?, ativo = ?, password_hash = ? WHERE id = ?",
+                     (nome, username, email, role, ativo, generate_password_hash(nova_senha), user_id))
     else:
-        conn.execute("UPDATE users SET nome = ?, username = ?, role = ?, ativo = ? WHERE id = ?",
-                     (nome, username, role, ativo, user_id))
+        conn.execute("UPDATE users SET nome = ?, username = ?, email = ?, role = ?, ativo = ? WHERE id = ?",
+                     (nome, username, email, role, ativo, user_id))
     conn.commit()
     conn.close()
     log_action("EDITAR_USUARIO", "users", user_id, f"Usuário {username} atualizado")
@@ -1324,6 +1519,93 @@ def ocorrencia_imprimir(ocorrencia_id):
     if not item:
         abort(404)
     return render_template("ocorrencia_imprimir.html", item=item)
+
+
+@app.route("/boletins/turma/<int:turma_id>")
+@login_required
+def boletins_turma(turma_id):
+    conn = get_connection()
+    turma = conn.execute("SELECT * FROM turmas WHERE id = ? AND ativa = 1", (turma_id,)).fetchone()
+    if not turma:
+        conn.close()
+        flash("Turma não encontrada.")
+        return redirect(url_for("turmas"))
+
+    alunos = conn.execute(
+        """
+        SELECT alunos.*, turmas.nome AS turma_nome, turmas.serie AS turma_serie, turmas.turno AS turma_turno, turmas.ano_letivo
+        FROM matriculas
+        INNER JOIN alunos ON alunos.id = matriculas.aluno_id
+        INNER JOIN turmas ON turmas.id = matriculas.turma_id
+        WHERE matriculas.turma_id = ? AND matriculas.ativa = 1 AND alunos.ativo = 1
+        ORDER BY alunos.nome ASC
+        """,
+        (turma_id,)
+    ).fetchall()
+
+    boletins = []
+    for aluno in alunos:
+        linhas = conn.execute(
+            """
+            SELECT boletim_itens.*, disciplinas.nome AS disciplina_nome
+            FROM boletim_itens
+            INNER JOIN disciplinas ON disciplinas.id = boletim_itens.disciplina_id
+            WHERE boletim_itens.aluno_id = ? AND boletim_itens.turma_id = ?
+            ORDER BY disciplinas.nome ASC
+            """,
+            (aluno["id"], turma_id),
+        ).fetchall()
+        boletins.append({"aluno": aluno, "linhas": linhas})
+
+    conn.close()
+    return render_template("boletins_turma.html", turma=turma, boletins=boletins)
+
+
+@app.route("/alunos/<int:aluno_id>/historico-manual", methods=["GET", "POST"])
+@login_required
+def historico_manual(aluno_id):
+    conn = get_connection()
+    aluno = conn.execute("SELECT * FROM alunos WHERE id = ? AND ativo = 1", (aluno_id,)).fetchone()
+    if not aluno:
+        conn.close()
+        flash("Aluno não encontrado.")
+        return redirect(url_for("buscar"))
+    if request.method == "POST":
+        data = {k: request.form.get(k, "").strip() for k in [
+            "ano_letivo", "escola", "municipio", "uf", "serie", "turma", "turno",
+            "disciplina", "nota_final", "carga_horaria", "faltas", "resultado", "observacoes"
+        ]}
+        if data["disciplina"]:
+            cur = conn.execute("""
+                INSERT INTO historico_externo
+                (aluno_id, ano_letivo, escola, municipio, uf, serie, turma, turno, disciplina, nota_final, carga_horaria, faltas, resultado, observacoes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (aluno_id, data["ano_letivo"], data["escola"], data["municipio"], data["uf"], data["serie"], data["turma"], data["turno"], data["disciplina"], data["nota_final"], data["carga_horaria"], data["faltas"], data["resultado"], data["observacoes"]))
+            conn.commit()
+            log_action("CRIAR_HISTORICO_MANUAL", "historico_externo", cur.lastrowid, f"Histórico manual do aluno {aluno_id}")
+            flash("Linha de histórico manual salva.")
+            return redirect(url_for("historico_manual", aluno_id=aluno_id))
+        flash("Informe ao menos a disciplina/componente curricular.")
+    linhas = conn.execute("SELECT * FROM historico_externo WHERE aluno_id = ? ORDER BY ano_letivo ASC, id ASC", (aluno_id,)).fetchall()
+    conn.close()
+    return render_template("historico_manual.html", aluno=aluno, linhas=linhas)
+
+
+@app.route("/historico-manual/<int:item_id>/excluir", methods=["POST"])
+@login_required
+def historico_manual_excluir(item_id):
+    conn = get_connection()
+    item = conn.execute("SELECT * FROM historico_externo WHERE id = ?", (item_id,)).fetchone()
+    if item:
+        conn.execute("DELETE FROM historico_externo WHERE id = ?", (item_id,))
+        conn.commit()
+        log_action("EXCLUIR_HISTORICO_MANUAL", "historico_externo", item_id, f"Aluno {item['aluno_id']}")
+        aluno_id = item["aluno_id"]
+    else:
+        aluno_id = 0
+    conn.close()
+    flash("Linha removida do histórico manual.")
+    return redirect(url_for("historico_manual", aluno_id=aluno_id)) if aluno_id else redirect(url_for("buscar"))
 
 
 @app.route("/backup/exportar")

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Histórico manual / notas de outras escolas</h2>
+    <p><strong>Aluno:</strong> {{ aluno.nome }}</p>
+    <p class="subtle">Use esta tela para registrar notas e componentes curriculares vindos de outra escola ou de anos anteriores. Isso não apaga o boletim atual.</p>
+</div>
+
+<div class="card">
+    <h3>Adicionar linha ao histórico</h3>
+    <form method="POST" class="grid grid-4">
+        <div><label>Ano letivo</label><input name="ano_letivo" placeholder="2025"></div>
+        <div><label>Escola</label><input name="escola"></div>
+        <div><label>Município</label><input name="municipio"></div>
+        <div><label>UF</label><input name="uf" maxlength="2"></div>
+        <div><label>Série</label><input name="serie" placeholder="2º Ano"></div>
+        <div><label>Turma</label><input name="turma"></div>
+        <div><label>Turno</label><input name="turno"></div>
+        <div><label>Componente curricular</label><input name="disciplina" required></div>
+        <div><label>Nota / Conceito</label><input name="nota_final"></div>
+        <div><label>Carga horária</label><input name="carga_horaria"></div>
+        <div><label>Faltas</label><input name="faltas"></div>
+        <div><label>Resultado</label><input name="resultado" placeholder="APROVADO"></div>
+        <div style="grid-column:1/-1;"><label>Observações</label><textarea name="observacoes"></textarea></div>
+        <div class="actions" style="grid-column:1/-1;"><button type="submit">Salvar linha</button><a class="btn btn-secundario" href="{{ url_for('editar_aluno', aluno_id=aluno.id) }}">Voltar ao aluno</a></div>
+    </form>
+</div>
+
+<div class="card printable">
+    <h3>Linhas cadastradas</h3>
+    <div class="table-wrap">
+        <table>
+            <tr><th>Ano</th><th>Escola</th><th>Série</th><th>Componente</th><th>Nota</th><th>CH</th><th>Faltas</th><th>Resultado</th><th>Ações</th></tr>
+            {% for item in linhas %}
+            <tr>
+                <td>{{ item.ano_letivo }}</td>
+                <td>{{ item.escola }}<br><small>{{ item.municipio }} {{ item.uf }}</small></td>
+                <td>{{ item.serie }}</td>
+                <td>{{ item.disciplina }}</td>
+                <td>{{ item.nota_final }}</td>
+                <td>{{ item.carga_horaria }}</td>
+                <td>{{ item.faltas }}</td>
+                <td>{{ item.resultado }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('historico_manual_excluir', item_id=item.id) }}" onsubmit="return confirm('Remover esta linha do histórico?');">
+                        <button class="btn btn-vermelho" type="submit">Remover</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="actions no-print" style="margin-top:16px;"><button onclick="window.print()" type="button">Imprimir histórico manual</button></div>
+</div>
+{% endblock %}

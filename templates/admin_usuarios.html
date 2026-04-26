@@ -6,6 +6,7 @@
         <div><label>Nome</label><input type="text" name="nome" required></div>
         <div><label>Login</label><input type="text" name="username" required></div>
         <div><label>Senha</label><input type="password" name="password" required></div>
+        <div><label>E-mail</label><input type="email" name="email" placeholder="usuario@escola.com"></div>
         <div>
             <label>Perfil</label>
             <select name="role">
@@ -25,13 +26,14 @@
     <h2 class="section-title">Usuários cadastrados</h2>
     <div class="table-wrap">
         <table>
-            <tr><th>ID</th><th>Nome</th><th>Login</th><th>Perfil</th><th>Status</th><th>Criado em</th><th>Ações</th></tr>
+            <tr><th>ID</th><th>Nome</th><th>Login</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Criado em</th><th>Ações</th></tr>
             {% for user in usuarios %}
             <tr>
                 <form method="POST" action="{{ url_for('admin_usuario_editar', user_id=user.id) }}">
                     <td>{{ user.id }}</td>
                     <td><input type="text" name="nome" value="{{ user.nome }}" required></td>
                     <td><input type="text" name="username" value="{{ user.username }}" required></td>
+                    <td><input type="email" name="email" value="{{ user.email or '' }}"></td>
                     <td>
                         <select name="role">
                             <option value="secretaria" {% if user.role == 'secretaria' %}selected{% endif %}>Secretaria</option>

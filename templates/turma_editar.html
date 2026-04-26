@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="section-title">Editar turma</h2>
+    <p class="subtle">A edição corrige digitação sem apagar alunos, boletins ou histórico.</p>
+    <form method="POST" class="grid grid-4">
+        <div><label>Nome da turma</label><input type="text" name="nome" value="{{ turma.nome or '' }}" required></div>
+        <div><label>Série</label><input type="text" name="serie" value="{{ turma.serie or '' }}" required></div>
+        <div><label>Turno</label><input type="text" name="turno" value="{{ turma.turno or '' }}" required></div>
+        <div><label>Ano letivo</label><input type="text" name="ano_letivo" value="{{ turma.ano_letivo or '' }}" required></div>
+        <div class="actions" style="grid-column:1/-1;">
+            <button type="submit">Salvar turma</button>
+            <a class="btn btn-secundario" href="{{ url_for('turmas') }}">Voltar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

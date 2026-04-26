@@ -2,11 +2,20 @@
 {% block title %}Boletim · {{ aluno.nome }}{% endblock %}
 {% block head %}
 <style>
-.doc-table { table-layout: fixed; }
-.doc-table col.disc { width: 12.5%; }
-.doc-table col.small { width: 4.15%; }
-.doc-table col.annual { width: 6.5%; }
-.doc-table col.result { width: 7.5%; }
+.doc-table { width:100%; table-layout:fixed; }
+.doc-table th, .doc-table td { font-size:10px; padding:3px 2px; }
+.doc-table .disciplina { width:12%; }
+.doc-table .mini { width:3%; }
+.doc-table .falta { width:3.3%; }
+.doc-table .media { width:4%; }
+.doc-table .final { width:5.2%; }
+.doc-table .resultado { width:6.5%; }
+.doc-table .wrap { white-space:normal; }
+@media print {
+  .doc-table th, .doc-table td { font-size:6.7px; padding:2px 1px; }
+  .doc-meta { grid-template-columns:repeat(4,1fr); }
+  .header-doc { margin-bottom:8px; }
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -17,13 +26,9 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card report-sheet">
     <div class="header-doc">
-        {% if logo_exists %}
-            <img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo da escola">
-        {% else %}
-            <div class="brand-mark">CE</div>
-        {% endif %}
+        {% if logo_exists %}<img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo da escola">{% else %}<div class="brand-mark">CE</div>{% endif %}
         <div>
             <h2>{{ school_settings.school_name }}</h2>
             <h3>{{ school_settings.report_title }} · Ano letivo {{ aluno.ano_letivo or current_year }}</h3>
@@ -45,16 +50,17 @@
         <div><strong>Telefone</strong>{{ aluno.telefone_responsavel or '' }}</div>
     </div>
 
-    <div class="table-wrap">
+    <div class="table-wrap-print">
         <table class="doc-table">
             <colgroup>
-                <col class="disc">
-                {% for _ in range(24) %}<col class="small">{% endfor %}
-                <col class="annual">
-                <col class="result">
+                <col class="disciplina">
+                {% for _ in range(16) %}<col class="mini">{% endfor %}
+                {% for _ in range(4) %}<col class="media"><col class="falta">{% endfor %}
+                <col class="final">
+                <col class="resultado">
             </colgroup>
             <tr>
-                <th rowspan="2">Componente curricular</th>
+                <th rowspan="2" class="wrap">Componente curricular</th>
                 <th colspan="6">1º Bimestre</th>
                 <th colspan="6">2º Bimestre</th>
                 <th colspan="6">3º Bimestre</th>
@@ -72,7 +78,7 @@
             {% set b4 = media_notas(item['b4_n1'], item['b4_n2'], item['b4_n3'], item['b4_n4']) %}
             {% set anual = media_anual([b1, b2, b3, b4]) %}
             <tr>
-                <td><strong>{{ item.disciplina_nome }}</strong></td>
+                <td class="wrap"><strong>{{ item.disciplina_nome }}</strong></td>
                 <td>{{ format_nota(item['b1_n1']) }}</td><td>{{ format_nota(item['b1_n2']) }}</td><td>{{ format_nota(item['b1_n3']) }}</td><td>{{ format_nota(item['b1_n4']) }}</td><td class="{{ nota_css_class(b1) }}">{{ format_nota(b1) }}</td><td>{{ item['b1_faltas'] or '' }}</td>
                 <td>{{ format_nota(item['b2_n1']) }}</td><td>{{ format_nota(item['b2_n2']) }}</td><td>{{ format_nota(item['b2_n3']) }}</td><td>{{ format_nota(item['b2_n4']) }}</td><td class="{{ nota_css_class(b2) }}">{{ format_nota(b2) }}</td><td>{{ item['b2_faltas'] or '' }}</td>
                 <td>{{ format_nota(item['b3_n1']) }}</td><td>{{ format_nota(item['b3_n2']) }}</td><td>{{ format_nota(item['b3_n3']) }}</td><td>{{ format_nota(item['b3_n4']) }}</td><td class="{{ nota_css_class(b3) }}">{{ format_nota(b3) }}</td><td>{{ item['b3_faltas'] or '' }}</td>
@@ -84,8 +90,7 @@
         </table>
     </div>
 
-    <div class="footer-note" style="margin-top:14px;">Documento emitido em {{ now_label }}.</div>
-
+    <div class="footer-note" style="margin-top:8px;">Documento emitido em {{ now_label }}.</div>
     <div class="signature-row">
         <div class="signature-line">{{ school_settings.coordenacao_label }}</div>
         <div class="signature-line">{{ school_settings.direcao_label }}</div>
@@ -99,12 +104,7 @@
             <tr><th>Turma</th><th>Série</th><th>Turno</th><th>Ano</th><th>Início</th><th>Fim</th></tr>
             {% for hist in historico_matriculas %}
             <tr>
-                <td>{{ hist.turma_nome }}</td>
-                <td>{{ hist.serie }}</td>
-                <td>{{ hist.turno }}</td>
-                <td>{{ hist.ano_letivo }}</td>
-                <td>{{ hist.data_inicio or '' }}</td>
-                <td>{{ hist.data_fim or '' }}</td>
+                <td>{{ hist.turma_nome }}</td><td>{{ hist.serie }}</td><td>{{ hist.turno }}</td><td>{{ hist.ano_letivo }}</td><td>{{ hist.data_inicio or '' }}</td><td>{{ hist.data_fim or '' }}</td>
             </tr>
             {% endfor %}
         </table>

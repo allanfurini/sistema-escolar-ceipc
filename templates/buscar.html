@@ -20,7 +20,7 @@
     <div class="table-wrap">
         <table>
             <tr>
-                <th>Aluno</th>
+                <th>Foto</th><th>Aluno</th>
                 <th>Código</th>
                 <th>Turma</th>
                 <th>Série</th>
@@ -29,10 +29,12 @@
                 <th>Pai</th>
                 <th>Telefone</th>
                 <th>CPF/RG aluno</th>
+                <th>Relatórios</th>
                 <th>Ações</th>
             </tr>
             {% for item in resultados %}
             <tr>
+                <td>{% if item.foto_path %}<img src="{{ url_for('uploaded_file', filename=item.foto_path) }}" style="width:42px;height:42px;object-fit:cover;border-radius:50%;border:1px solid #ccd6e0;">{% endif %}</td>
                 <td>{{ item.nome }}</td>
                 <td>{{ item.codigo_aluno or '' }}</td>
                 <td>{{ item.turma_nome or '' }}</td>
@@ -43,9 +45,16 @@
                 <td>{{ item.telefone_responsavel or '' }}</td>
                 <td>{{ item.cpf_aluno or '' }} {% if item.cpf_aluno and item.rg_aluno %}·{% endif %} {{ item.rg_aluno or '' }}</td>
                 <td>
+                    <div style="display:grid;gap:6px;">
+                        <span class="pill">{{ item.ocorrencias_count or 0 }} relatório(s)</span>
+                        <a class="btn btn-secundario" href="{{ url_for('ocorrencias', aluno_id=item.id) }}">Ver relatórios</a>
+                    </div>
+                </td>
+                <td>
                     <div class="actions">
                         <a class="btn btn-secundario" href="{{ url_for('editar_aluno', aluno_id=item.id) }}">Editar</a>
                         <a class="btn btn-secundario" href="{{ url_for('boletim', aluno_id=item.id) }}">Boletim</a>
+                        <a class="btn btn-secundario" href="{{ url_for('historico_manual', aluno_id=item.id) }}">Histórico manual</a>
                     </div>
                 </td>
             </tr>

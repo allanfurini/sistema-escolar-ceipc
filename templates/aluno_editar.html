@@ -4,7 +4,7 @@
 <div class="card">
     <h2 class="section-title">Editar cadastro do aluno</h2>
     <p class="subtle">Você pode completar dados antigos sem perder o cadastro e trocar a turma atual preservando o histórico.</p>
-    <form method="POST" class="grid grid-3">
+    <form method="POST" enctype="multipart/form-data" class="grid grid-3">
         <div>
             <label>Nome completo</label>
             <input type="text" name="nome" value="{{ aluno.nome or '' }}" required>
@@ -72,12 +72,18 @@
             <label>RG do aluno</label>
             <input type="text" name="rg_aluno" value="{{ aluno.rg_aluno or '' }}">
         </div>
+        <div>
+            <label>Foto do aluno</label>
+            {% if aluno.foto_path %}<br><img src="{{ url_for('uploaded_file', filename=aluno.foto_path) }}" style="width:90px;height:90px;object-fit:cover;border-radius:12px;border:1px solid #ccd6e0;margin-bottom:8px;">{% endif %}
+            <input type="file" name="foto_aluno" accept="image/*">
+        </div>
         <div style="grid-column:1/-1;">
             <label>Observações</label>
             <textarea name="observacoes">{{ aluno.observacoes or '' }}</textarea>
         </div>
         <div class="actions" style="grid-column:1/-1;">
             <button type="submit">Salvar alterações</button>
+            <a href="{{ url_for('historico_manual', aluno_id=aluno.id) }}" class="btn btn-secundario">Notas de outras escolas / histórico manual</a>
             <a href="{{ url_for('alunos') }}" class="btn btn-secundario">Voltar</a>
         </div>
     </form>

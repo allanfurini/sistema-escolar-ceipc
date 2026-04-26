@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="login-card">
+    <h2>Recuperar senha</h2>
+    <p class="subtle">Digite o e-mail cadastrado no usuário. O envio real depende da configuração SMTP no Render.</p>
+    <form method="POST">
+        <label>E-mail</label>
+        <input type="email" name="email" required>
+        <button type="submit">Solicitar recuperação</button>
+        <a class="btn btn-secundario" href="{{ url_for('login') }}">Voltar</a>
+    </form>
+</div>
+{% endblock %}
