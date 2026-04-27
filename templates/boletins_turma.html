@@ -1,131 +1,242 @@
 {% extends "base.html" %}
 {% block title %}Boletins da turma · {{ turma.nome }}{% endblock %}
+
+{% set layout = request.args.get('layout', 'retrato') %}
+
 {% block head %}
 <style>
-/* Impressão em lote: dois boletins completos por folha, sempre em paisagem. */
 .batch-page {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 5mm;
-  min-height: 190mm;
   page-break-after: always;
   break-after: page;
 }
-.batch-page:last-child { page-break-after: auto; break-after: auto; }
+
+.batch-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
 .batch-boletim {
   box-sizing: border-box;
-  border: 0;
-  padding: 0;
-  margin: 0;
   page-break-inside: avoid;
   break-inside: avoid;
+  overflow: hidden;
 }
+
 .batch-boletim .header-doc {
-  margin-bottom: 4px;
-  gap: 7px;
+  margin-bottom: 3px;
+  gap: 6px;
 }
+
 .batch-boletim .header-doc img,
 .batch-boletim .brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
-  flex: 0 0 32px;
+  flex: 0 0 28px;
 }
+
 .batch-boletim h2 {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.05;
   margin: 0;
 }
+
 .batch-boletim h3,
 .batch-boletim p {
-  font-size: 7.5px;
+  font-size: 6.8px;
   line-height: 1.05;
   margin: 1px 0;
 }
+
 .batch-boletim .doc-meta {
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  margin-bottom: 5px;
+  gap: 3px;
+  margin-bottom: 4px;
 }
+
 .batch-boletim .doc-meta div {
-  min-height: 24px;
-  padding: 3px 5px;
-  font-size: 7px;
+  min-height: 20px;
+  padding: 2px 4px;
+  font-size: 6.3px;
   line-height: 1.05;
 }
+
 .batch-boletim .doc-meta strong {
-  display:block;
-  font-size: 7px;
+  display: block;
+  font-size: 6.2px;
   margin-bottom: 1px;
 }
+
 .batch-boletim .doc-table {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
 }
+
 .batch-boletim .doc-table th,
 .batch-boletim .doc-table td {
-  font-size: 5.8px;
-  line-height: 1.05;
-  padding: 1px 1px;
+  font-size: 5.2px;
+  line-height: 1.02;
+  padding: 1px;
   text-align: center;
   vertical-align: middle;
   overflow: hidden;
 }
+
 .batch-boletim .doc-table .disciplina { width: 11%; }
 .batch-boletim .doc-table .mini { width: 2.65%; }
 .batch-boletim .doc-table .falta { width: 3%; }
 .batch-boletim .doc-table .media { width: 3.6%; }
 .batch-boletim .doc-table .final { width: 4.9%; }
-.batch-boletim .doc-table .resultado { width: 6.8%; }
-.batch-boletim .doc-table .wrap { white-space: normal; word-break: normal; }
+.batch-boletim .doc-table .resultado { width: 7.3%; }
+
+.batch-boletim .doc-table .wrap {
+  white-space: normal;
+  word-break: normal;
+}
+
 .batch-boletim .doc-table .no-break,
 .batch-boletim .doc-table .resultado-cell {
   white-space: nowrap;
   word-break: keep-all;
-  font-size: 5.5px;
+  font-size: 5px;
 }
+
 .batch-boletim .footer-note {
-  font-size: 6.5px;
+  font-size: 5.8px;
   margin-top: 3px;
 }
+
 .batch-boletim .signature-row {
-  margin-top: 7px;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 35px;
 }
+
 .batch-boletim .signature-line {
-  font-size: 7px;
+  font-size: 6.2px;
   padding-top: 5px;
   border-top: 1px solid #1d3557;
   text-align: center;
 }
+
+/* RETRATO: dois boletins empilhados */
+.layout-retrato .batch-page {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 6mm;
+  min-height: 277mm;
+}
+
+.layout-retrato .batch-boletim {
+  height: 134mm;
+  padding: 0;
+}
+
+/* PAISAGEM: dois boletins lado a lado */
+.layout-paisagem .batch-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6mm;
+  min-height: 190mm;
+}
+
+.layout-paisagem .batch-boletim {
+  height: 185mm;
+  padding: 0;
+}
+
+.layout-paisagem .batch-boletim .doc-meta {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.layout-paisagem .batch-boletim h2 {
+  font-size: 11px;
+}
+
+.layout-paisagem .batch-boletim .doc-table th,
+.layout-paisagem .batch-boletim .doc-table td {
+  font-size: 4.6px;
+}
+
+.layout-paisagem .batch-boletim .doc-table .resultado-cell {
+  font-size: 4.4px;
+}
+
 @media print {
+  {% if layout == "paisagem" %}
   @page { size: A4 landscape; margin: 6mm; }
+  {% else %}
+  @page { size: A4 portrait; margin: 6mm; }
+  {% endif %}
+
   body { background: white !important; }
-  .main-container, .content, .page-content { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-  .card { box-shadow: none !important; border-radius: 0 !important; background: white !important; }
-  .batch-page { height: 190mm; min-height: 190mm; }
-  .batch-boletim { height: 92mm; overflow: hidden; }
+
+  .main-container,
+  .content,
+  .page-content {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+  }
+
+  .layout-retrato .batch-page {
+    height: 277mm;
+    min-height: 277mm;
+  }
+
+  .layout-paisagem .batch-page {
+    height: 190mm;
+    min-height: 190mm;
+  }
 }
 </style>
 {% endblock %}
+
 {% block content %}
 <div class="card no-print">
   <h2>Boletins em lote · {{ turma.nome }} · {{ turma.serie }} · {{ turma.turno }}</h2>
-  <p>Esta impressão foi configurada para sair com <strong>dois boletins por folha</strong>, em A4 paisagem.</p>
+
+  <p>Escolha o formato da impressão em lote:</p>
+
+  <form method="get" style="display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin:15px 0;">
+    <label>
+      <input type="radio" name="layout" value="retrato" {% if layout != "paisagem" %}checked{% endif %}>
+      Retrato — 2 boletins por folha, um em cima do outro
+    </label>
+
+    <label>
+      <input type="radio" name="layout" value="paisagem" {% if layout == "paisagem" %}checked{% endif %}>
+      Paisagem — 2 boletins por folha, lado a lado
+    </label>
+
+    <button type="submit" class="btn">Atualizar visualização</button>
+  </form>
+
   <div class="actions" style="justify-content:flex-end;">
     <button onclick="window.print()" class="btn btn-verde">Imprimir boletins da turma</button>
   </div>
 </div>
 
+<div class="layout-{{ layout if layout in ['retrato', 'paisagem'] else 'retrato' }}">
 {% for entry in boletins %}
   {% if loop.index0 is divisibleby 2 %}<div class="batch-page">{% endif %}
 
   <section class="batch-boletim">
     <div class="header-doc">
-      {% if logo_exists %}<img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo da escola">{% else %}<div class="brand-mark">CE</div>{% endif %}
+      {% if logo_exists %}
+        <img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo da escola">
+      {% else %}
+        <div class="brand-mark">CE</div>
+      {% endif %}
       <div>
         <h2>{{ school_settings.school_name }}</h2>
         <h3>{{ school_settings.report_title }} · Ano letivo {{ entry.aluno.ano_letivo or current_year }}</h3>
@@ -162,8 +273,11 @@
         <th rowspan="2">Resultado</th>
       </tr>
       <tr>
-        {% for _ in range(4) %}<th>N1</th><th>N2</th><th>N3</th><th>N4</th><th>M</th><th>F</th>{% endfor %}
+        {% for _ in range(4) %}
+          <th>N1</th><th>N2</th><th>N3</th><th>N4</th><th>M</th><th>F</th>
+        {% endfor %}
       </tr>
+
       {% for item in entry.linhas %}
       {% set b1 = media_notas(item['b1_n1'], item['b1_n2'], item['b1_n3'], item['b1_n4']) %}
       {% set b2 = media_notas(item['b2_n1'], item['b2_n2'], item['b2_n3'], item['b2_n4']) %}
@@ -172,10 +286,35 @@
       {% set anual = media_anual([b1, b2, b3, b4]) %}
       <tr>
         <td class="wrap"><strong>{{ item.disciplina_nome }}</strong></td>
-        <td>{{ format_nota(item['b1_n1']) }}</td><td>{{ format_nota(item['b1_n2']) }}</td><td>{{ format_nota(item['b1_n3']) }}</td><td>{{ format_nota(item['b1_n4']) }}</td><td class="{{ nota_css_class(b1) }} no-break">{{ format_nota(b1) }}</td><td>{{ item['b1_faltas'] or '' }}</td>
-        <td>{{ format_nota(item['b2_n1']) }}</td><td>{{ format_nota(item['b2_n2']) }}</td><td>{{ format_nota(item['b2_n3']) }}</td><td>{{ format_nota(item['b2_n4']) }}</td><td class="{{ nota_css_class(b2) }} no-break">{{ format_nota(b2) }}</td><td>{{ item['b2_faltas'] or '' }}</td>
-        <td>{{ format_nota(item['b3_n1']) }}</td><td>{{ format_nota(item['b3_n2']) }}</td><td>{{ format_nota(item['b3_n3']) }}</td><td>{{ format_nota(item['b3_n4']) }}</td><td class="{{ nota_css_class(b3) }} no-break">{{ format_nota(b3) }}</td><td>{{ item['b3_faltas'] or '' }}</td>
-        <td>{{ format_nota(item['b4_n1']) }}</td><td>{{ format_nota(item['b4_n2']) }}</td><td>{{ format_nota(item['b4_n3']) }}</td><td>{{ format_nota(item['b4_n4']) }}</td><td class="{{ nota_css_class(b4) }} no-break">{{ format_nota(b4) }}</td><td>{{ item['b4_faltas'] or '' }}</td>
+
+        <td>{{ format_nota(item['b1_n1']) }}</td>
+        <td>{{ format_nota(item['b1_n2']) }}</td>
+        <td>{{ format_nota(item['b1_n3']) }}</td>
+        <td>{{ format_nota(item['b1_n4']) }}</td>
+        <td class="{{ nota_css_class(b1) }} no-break">{{ format_nota(b1) }}</td>
+        <td>{{ item['b1_faltas'] or '' }}</td>
+
+        <td>{{ format_nota(item['b2_n1']) }}</td>
+        <td>{{ format_nota(item['b2_n2']) }}</td>
+        <td>{{ format_nota(item['b2_n3']) }}</td>
+        <td>{{ format_nota(item['b2_n4']) }}</td>
+        <td class="{{ nota_css_class(b2) }} no-break">{{ format_nota(b2) }}</td>
+        <td>{{ item['b2_faltas'] or '' }}</td>
+
+        <td>{{ format_nota(item['b3_n1']) }}</td>
+        <td>{{ format_nota(item['b3_n2']) }}</td>
+        <td>{{ format_nota(item['b3_n3']) }}</td>
+        <td>{{ format_nota(item['b3_n4']) }}</td>
+        <td class="{{ nota_css_class(b3) }} no-break">{{ format_nota(b3) }}</td>
+        <td>{{ item['b3_faltas'] or '' }}</td>
+
+        <td>{{ format_nota(item['b4_n1']) }}</td>
+        <td>{{ format_nota(item['b4_n2']) }}</td>
+        <td>{{ format_nota(item['b4_n3']) }}</td>
+        <td>{{ format_nota(item['b4_n4']) }}</td>
+        <td class="{{ nota_css_class(b4) }} no-break">{{ format_nota(b4) }}</td>
+        <td>{{ item['b4_faltas'] or '' }}</td>
+
         <td class="{{ nota_css_class(anual) }} no-break">{{ format_nota(anual) }}</td>
         <td class="{{ nota_css_class(anual) }} resultado-cell">{{ resultado_por_media(anual) }}</td>
       </tr>
@@ -183,6 +322,7 @@
     </table>
 
     <div class="footer-note">Documento emitido em {{ now_label }}.</div>
+
     <div class="signature-row">
       <div class="signature-line">{{ school_settings.coordenacao_label }}</div>
       <div class="signature-line">{{ school_settings.direcao_label }}</div>
@@ -191,4 +331,5 @@
 
   {% if loop.index is divisibleby 2 or loop.last %}</div>{% endif %}
 {% endfor %}
+</div>
 {% endblock %}
