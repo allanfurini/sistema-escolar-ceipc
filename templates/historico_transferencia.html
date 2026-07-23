@@ -98,7 +98,6 @@
             <th class="w-faltas">Faltas</th>
             <th class="w-res">Resultado</th>
         </tr>
-        {% if rendimentos_editaveis %}
         {% for item in rendimentos_editaveis %}
         <tr>
             <td>{{ item.ano }}</td><td>{{ item.serie }}</td>
@@ -106,7 +105,6 @@
             <td>{{ item.disciplina }}</td><td>{{ item.nota_conceito }}</td><td>{{ item.carga_horaria }}</td><td>{{ item.faltas }}</td><td class="nowrap">{{ item.resultado }}</td>
         </tr>
         {% endfor %}
-        {% else %}
         {% for item in historico_externo %}
         <tr>
             <td>{{ item.ano_letivo }}</td><td>{{ item.serie }}</td>
@@ -123,10 +121,9 @@
             {% set faltas = (item['b1_faltas'] or 0) + (item['b2_faltas'] or 0) + (item['b3_faltas'] or 0) + (item['b4_faltas'] or 0) %}
         <tr>
             <td>{{ aluno.ano_letivo or current_year }}</td><td>{{ aluno.turma_serie or '' }}</td><td>{{ school_settings.school_name }}</td><td>{{ item.disciplina_nome }}</td>
-            <td>{{ format_nota(anual) }}</td><td></td><td>{{ faltas if faltas else '' }}</td><td class="nowrap {{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
+            <td>{{ format_nota(anual) }}</td><td>{{ item.carga_horaria_historico or '' }}</td><td>{{ faltas if faltas else '' }}</td><td class="nowrap {{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
         </tr>
         {% endfor %}
-        {% endif %}
         {% if not rendimentos_editaveis and not historico_externo and not linhas %}<tr><td colspan="8">Nenhum rendimento registrado.</td></tr>{% endif %}
     </table>
 

@@ -35,8 +35,25 @@
     <label>Data de emissão<input name="data_emissao" placeholder="dd/mm/aaaa" value="{{ documento['data_emissao'] if documento and documento['data_emissao'] else '' }}"></label>
   </div>
 
-  <h3 class="section-title">Rendimento escolar — linhas totalmente editáveis</h3>
-  <p class="muted">Use uma linha para cada componente curricular de cada ano/escola. É possível registrar meio ano, carga horária parcial, notas de outras escolas e resultados específicos.</p>
+  <h3 class="section-title">Ano atual — dados protegidos do diário</h3>
+  <p class="muted">As notas e disciplinas abaixo vêm do diário e nunca são apagadas ao salvar este histórico. Aqui você pode preencher somente a carga horária por componente ou a carga horária anual.</p>
+  <div class="edit-grid">
+    <label>Carga horária anual<input name="carga_horaria_anual" value="{{ documento['carga_horaria_anual'] if documento and documento['carga_horaria_anual'] else '' }}" placeholder="Ex.: 800"></label>
+  </div>
+  <div class="scroll"><table class="table-edit"><thead><tr><th>Ano</th><th>Série/Ano</th><th>Componente curricular</th><th>Carga horária</th></tr></thead><tbody>
+  {% for item in current_rows %}
+  <tr>
+    <td>{{ aluno.ano_letivo or current_year }}</td>
+    <td>{{ aluno.turma_serie or '' }}</td>
+    <td>{{ item.disciplina_nome }}<input type="hidden" name="current_disciplina_id[]" value="{{ item.disciplina_id }}"></td>
+    <td><input name="current_ch[]" value="{{ item.carga_horaria or '' }}" placeholder="Ex.: 80"></td>
+  </tr>
+  {% endfor %}
+  {% if not current_rows %}<tr><td colspan="4">Nenhuma disciplina atual encontrada no diário.</td></tr>{% endif %}
+  </tbody></table></div>
+
+  <h3 class="section-title">Anos anteriores e outras escolas — linhas manuais</h3>
+  <p class="muted">Use uma linha para cada componente curricular de cada ano/escola. Salvar esta área não altera nem exclui o ano atual, as notas do diário ou as demais disciplinas.</p>
   <div class="scroll"><table class="table-edit" id="rendimentos-table"><thead><tr><th>Ano</th><th>Série/Ano</th><th>Escola</th><th>Município</th><th>UF</th><th>Componente</th><th>Nota/Conceito</th><th>CH</th><th>Faltas</th><th>Resultado</th><th></th></tr></thead><tbody>
   {% for item in rendimentos %}
   <tr><td><input name="rend_ano[]" value="{{ item.ano }}"></td><td><input name="rend_serie[]" value="{{ item.serie }}"></td><td><input name="rend_escola[]" value="{{ item.escola }}"></td><td><input name="rend_municipio[]" value="{{ item.municipio }}"></td><td><input name="rend_uf[]" value="{{ item.uf }}"></td><td><input name="rend_disciplina[]" value="{{ item.disciplina }}"></td><td><input name="rend_nota[]" value="{{ item.nota_conceito }}"></td><td><input name="rend_ch[]" value="{{ item.carga_horaria }}"></td><td><input name="rend_faltas[]" value="{{ item.faltas }}"></td><td><input name="rend_resultado[]" value="{{ item.resultado }}"></td><td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>

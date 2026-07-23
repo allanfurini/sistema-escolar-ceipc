@@ -281,6 +281,22 @@ def init_db():
     """)
 
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_cargas_horarias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aluno_id INTEGER NOT NULL,
+        turma_id INTEGER NOT NULL,
+        disciplina_id INTEGER NOT NULL,
+        carga_horaria TEXT,
+        updated_by TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(aluno_id, turma_id, disciplina_id),
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id),
+        FOREIGN KEY (turma_id) REFERENCES turmas(id),
+        FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id)
+    )
+    """)
+
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
@@ -358,6 +374,11 @@ def init_db():
         ("email", "TEXT"),
     ]:
         ensure_column(cursor, "users", column_name, column_type)
+
+    for column_name, column_type in [
+        ("carga_horaria_anual", "TEXT"),
+    ]:
+        ensure_column(cursor, "historico_documentos", column_name, column_type)
 
     # Corrige registros antigos sem valor nas novas colunas
     cursor.execute("UPDATE alunos SET ativo = 1 WHERE ativo IS NULL")
@@ -1289,9 +1310,14 @@ def boletim(aluno_id):
 
     linhas = conn.execute(
         """
-        SELECT boletim_itens.*, disciplinas.nome AS disciplina_nome
+        SELECT boletim_itens.*, disciplinas.nome AS disciplina_nome,
+               historico_cargas_horarias.carga_horaria AS carga_horaria_historico
         FROM boletim_itens
         INNER JOIN disciplinas ON disciplinas.id = boletim_itens.disciplina_id
+        LEFT JOIN historico_cargas_horarias
+          ON historico_cargas_horarias.aluno_id = boletim_itens.aluno_id
+         AND historico_cargas_horarias.turma_id = boletim_itens.turma_id
+         AND historico_cargas_horarias.disciplina_id = boletim_itens.disciplina_id
         WHERE boletim_itens.aluno_id = ? AND boletim_itens.turma_id = ?
         ORDER BY disciplinas.nome ASC
         """,
@@ -1401,14 +1427,15 @@ def historico_transferencia_editar(aluno_id):
             "local_emissao": request.form.get("local_emissao", "").strip(),
             "data_emissao": request.form.get("data_emissao", "").strip(),
             "carimbo_texto": request.form.get("carimbo_texto", "").strip(),
+            "carga_horaria_anual": request.form.get("carga_horaria_anual", "").strip(),
         }
         conn.execute(
             """
             INSERT INTO historico_documentos
             (aluno_id, unidade_escolar, cnpj, endereco, numero, bairro, municipio, uf, mantenedora,
              codigo_matricula, nacionalidade, turno_atual, observacoes_legais, observacoes_gerais,
-             certificado_texto, local_emissao, data_emissao, carimbo_texto, updated_by, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+             certificado_texto, local_emissao, data_emissao, carimbo_texto, carga_horaria_anual, updated_by, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(aluno_id) DO UPDATE SET
               unidade_escolar=excluded.unidade_escolar, cnpj=excluded.cnpj, endereco=excluded.endereco,
               numero=excluded.numero, bairro=excluded.bairro, municipio=excluded.municipio, uf=excluded.uf,
@@ -1417,7 +1444,7 @@ def historico_transferencia_editar(aluno_id):
               observacoes_legais=excluded.observacoes_legais, observacoes_gerais=excluded.observacoes_gerais,
               certificado_texto=excluded.certificado_texto, local_emissao=excluded.local_emissao,
               data_emissao=excluded.data_emissao, carimbo_texto=excluded.carimbo_texto,
-              updated_by=excluded.updated_by, updated_at=CURRENT_TIMESTAMP
+              carga_horaria_anual=excluded.carga_horaria_anual, updated_by=excluded.updated_by, updated_at=CURRENT_TIMESTAMP
             """,
             (aluno_id, *campos.values(), session.get("username"))
         )
@@ -1476,6 +1503,26 @@ def historico_transferencia_editar(aluno_id):
                     (aluno_id, *vals, i)
                 )
 
+        # Atualiza somente a carga horária dos componentes atuais, sem tocar em notas ou anos anteriores.
+        current_disciplina_ids = request.form.getlist("current_disciplina_id[]")
+        current_chs = request.form.getlist("current_ch[]")
+        turma_atual_id = aluno["turma_id"]
+        if turma_atual_id:
+            for i, disciplina_id in enumerate(current_disciplina_ids):
+                disciplina_id = disciplina_id.strip()
+                carga = current_chs[i].strip() if i < len(current_chs) else ""
+                if disciplina_id:
+                    conn.execute(
+                        """
+                        INSERT INTO historico_cargas_horarias
+                        (aluno_id, turma_id, disciplina_id, carga_horaria, updated_by, updated_at)
+                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        ON CONFLICT(aluno_id, turma_id, disciplina_id) DO UPDATE SET
+                          carga_horaria=excluded.carga_horaria, updated_by=excluded.updated_by, updated_at=CURRENT_TIMESTAMP
+                        """,
+                        (aluno_id, turma_atual_id, disciplina_id, carga, session.get("username"))
+                    )
+
         conn.commit()
         conn.close()
         log_action("EDITAR_HISTORICO_COMPLETO", "historico_documentos", aluno_id, f"Histórico completo de {aluno['nome']}")
@@ -1486,8 +1533,24 @@ def historico_transferencia_editar(aluno_id):
     rendimentos = conn.execute("SELECT * FROM historico_rendimentos_editaveis WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)).fetchall()
     registros = conn.execute("SELECT * FROM historico_registros_editaveis WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)).fetchall()
     educacao_fisica = conn.execute("SELECT * FROM historico_educacao_fisica WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)).fetchall()
+    current_rows = []
+    if aluno["turma_id"]:
+        current_rows = conn.execute(
+            """
+            SELECT boletim_itens.disciplina_id, disciplinas.nome AS disciplina_nome,
+                   historico_cargas_horarias.carga_horaria
+            FROM boletim_itens
+            INNER JOIN disciplinas ON disciplinas.id = boletim_itens.disciplina_id
+            LEFT JOIN historico_cargas_horarias
+              ON historico_cargas_horarias.aluno_id = boletim_itens.aluno_id
+             AND historico_cargas_horarias.turma_id = boletim_itens.turma_id
+             AND historico_cargas_horarias.disciplina_id = boletim_itens.disciplina_id
+            WHERE boletim_itens.aluno_id = ? AND boletim_itens.turma_id = ?
+            ORDER BY disciplinas.nome
+            """, (aluno_id, aluno["turma_id"])
+        ).fetchall()
     conn.close()
-    return render_template("historico_editar.html", aluno=aluno, documento=documento, rendimentos=rendimentos, registros=registros, educacao_fisica=educacao_fisica)
+    return render_template("historico_editar.html", aluno=aluno, documento=documento, rendimentos=rendimentos, registros=registros, educacao_fisica=educacao_fisica, current_rows=current_rows)
 
 
 @app.route("/buscar")
