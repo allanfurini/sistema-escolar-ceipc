@@ -208,6 +208,79 @@ def init_db():
     """)
 
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_documentos (
+        aluno_id INTEGER PRIMARY KEY,
+        unidade_escolar TEXT,
+        cnpj TEXT,
+        endereco TEXT,
+        numero TEXT,
+        bairro TEXT,
+        municipio TEXT,
+        uf TEXT,
+        mantenedora TEXT,
+        codigo_matricula TEXT,
+        nacionalidade TEXT,
+        turno_atual TEXT,
+        observacoes_legais TEXT,
+        observacoes_gerais TEXT,
+        certificado_texto TEXT,
+        local_emissao TEXT,
+        data_emissao TEXT,
+        carimbo_texto TEXT,
+        updated_by TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_rendimentos_editaveis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aluno_id INTEGER NOT NULL,
+        ano TEXT,
+        serie TEXT,
+        escola TEXT,
+        municipio TEXT,
+        uf TEXT,
+        disciplina TEXT,
+        nota_conceito TEXT,
+        carga_horaria TEXT,
+        faltas TEXT,
+        resultado TEXT,
+        ordem INTEGER DEFAULT 0,
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_registros_editaveis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aluno_id INTEGER NOT NULL,
+        ciclo_serie TEXT,
+        ano TEXT,
+        unidade_escolar TEXT,
+        municipio TEXT,
+        uf TEXT,
+        observacao TEXT,
+        ordem INTEGER DEFAULT 0,
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS historico_educacao_fisica (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aluno_id INTEGER NOT NULL,
+        ano_letivo TEXT,
+        serie TEXT,
+        aulas_dadas TEXT,
+        frequencia TEXT,
+        ordem INTEGER DEFAULT 0,
+        FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    )
+    """)
+
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
@@ -1258,7 +1331,7 @@ def historico_transferencia(aluno_id):
         ORDER BY disciplinas.nome ASC
         """,
         (aluno_id, aluno["turma_id"]),
-    ).fetchall()
+    ).fetchall() if aluno["turma_id"] else []
 
     historico_matriculas = conn.execute(
         """
@@ -1279,14 +1352,142 @@ def historico_transferencia(aluno_id):
         """,
         (aluno_id,)
     ).fetchall()
+    documento = conn.execute("SELECT * FROM historico_documentos WHERE aluno_id = ?", (aluno_id,)).fetchone()
+    rendimentos_editaveis = conn.execute(
+        "SELECT * FROM historico_rendimentos_editaveis WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)
+    ).fetchall()
+    registros_editaveis = conn.execute(
+        "SELECT * FROM historico_registros_editaveis WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)
+    ).fetchall()
+    educacao_fisica = conn.execute(
+        "SELECT * FROM historico_educacao_fisica WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)
+    ).fetchall()
     conn.close()
     return render_template(
         "historico_transferencia.html",
-        aluno=aluno,
-        linhas=linhas,
-        historico_matriculas=historico_matriculas,
-        historico_externo=historico_externo,
+        aluno=aluno, linhas=linhas, historico_matriculas=historico_matriculas,
+        historico_externo=historico_externo, documento=documento,
+        rendimentos_editaveis=rendimentos_editaveis, registros_editaveis=registros_editaveis,
+        educacao_fisica=educacao_fisica,
     )
+
+
+@app.route("/historico-transferencia/<int:aluno_id>/editar", methods=["GET", "POST"])
+@login_required
+def historico_transferencia_editar(aluno_id):
+    conn = get_connection()
+    aluno = aluno_com_turma(conn, aluno_id)
+    if not aluno:
+        conn.close()
+        flash("Aluno não encontrado.")
+        return redirect(url_for("alunos"))
+
+    if request.method == "POST":
+        campos = {
+            "unidade_escolar": request.form.get("unidade_escolar", "").strip(),
+            "cnpj": request.form.get("cnpj", "").strip(),
+            "endereco": request.form.get("endereco", "").strip(),
+            "numero": request.form.get("numero", "").strip(),
+            "bairro": request.form.get("bairro", "").strip(),
+            "municipio": request.form.get("municipio", "").strip(),
+            "uf": request.form.get("uf", "").strip(),
+            "mantenedora": request.form.get("mantenedora", "").strip(),
+            "codigo_matricula": request.form.get("codigo_matricula", "").strip(),
+            "nacionalidade": request.form.get("nacionalidade", "").strip(),
+            "turno_atual": request.form.get("turno_atual", "").strip(),
+            "observacoes_legais": request.form.get("observacoes_legais", "").strip(),
+            "observacoes_gerais": request.form.get("observacoes_gerais", "").strip(),
+            "certificado_texto": request.form.get("certificado_texto", "").strip(),
+            "local_emissao": request.form.get("local_emissao", "").strip(),
+            "data_emissao": request.form.get("data_emissao", "").strip(),
+            "carimbo_texto": request.form.get("carimbo_texto", "").strip(),
+        }
+        conn.execute(
+            """
+            INSERT INTO historico_documentos
+            (aluno_id, unidade_escolar, cnpj, endereco, numero, bairro, municipio, uf, mantenedora,
+             codigo_matricula, nacionalidade, turno_atual, observacoes_legais, observacoes_gerais,
+             certificado_texto, local_emissao, data_emissao, carimbo_texto, updated_by, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(aluno_id) DO UPDATE SET
+              unidade_escolar=excluded.unidade_escolar, cnpj=excluded.cnpj, endereco=excluded.endereco,
+              numero=excluded.numero, bairro=excluded.bairro, municipio=excluded.municipio, uf=excluded.uf,
+              mantenedora=excluded.mantenedora, codigo_matricula=excluded.codigo_matricula,
+              nacionalidade=excluded.nacionalidade, turno_atual=excluded.turno_atual,
+              observacoes_legais=excluded.observacoes_legais, observacoes_gerais=excluded.observacoes_gerais,
+              certificado_texto=excluded.certificado_texto, local_emissao=excluded.local_emissao,
+              data_emissao=excluded.data_emissao, carimbo_texto=excluded.carimbo_texto,
+              updated_by=excluded.updated_by, updated_at=CURRENT_TIMESTAMP
+            """,
+            (aluno_id, *campos.values(), session.get("username"))
+        )
+
+        conn.execute("DELETE FROM historico_rendimentos_editaveis WHERE aluno_id = ?", (aluno_id,))
+        anos = request.form.getlist("rend_ano[]")
+        series = request.form.getlist("rend_serie[]")
+        escolas = request.form.getlist("rend_escola[]")
+        municipios = request.form.getlist("rend_municipio[]")
+        ufs = request.form.getlist("rend_uf[]")
+        disciplinas = request.form.getlist("rend_disciplina[]")
+        notas = request.form.getlist("rend_nota[]")
+        cargas = request.form.getlist("rend_ch[]")
+        faltas = request.form.getlist("rend_faltas[]")
+        resultados = request.form.getlist("rend_resultado[]")
+        total = max(map(len, [anos, series, escolas, municipios, ufs, disciplinas, notas, cargas, faltas, resultados]), default=0)
+        for i in range(total):
+            vals = [lst[i].strip() if i < len(lst) else "" for lst in [anos, series, escolas, municipios, ufs, disciplinas, notas, cargas, faltas, resultados]]
+            if any(vals):
+                conn.execute(
+                    """INSERT INTO historico_rendimentos_editaveis
+                    (aluno_id, ano, serie, escola, municipio, uf, disciplina, nota_conceito, carga_horaria, faltas, resultado, ordem)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (aluno_id, *vals, i)
+                )
+
+        conn.execute("DELETE FROM historico_registros_editaveis WHERE aluno_id = ?", (aluno_id,))
+        ciclos = request.form.getlist("reg_ciclo[]")
+        reg_anos = request.form.getlist("reg_ano[]")
+        reg_escolas = request.form.getlist("reg_escola[]")
+        reg_municipios = request.form.getlist("reg_municipio[]")
+        reg_ufs = request.form.getlist("reg_uf[]")
+        reg_obs = request.form.getlist("reg_obs[]")
+        total_reg = max(map(len, [ciclos, reg_anos, reg_escolas, reg_municipios, reg_ufs, reg_obs]), default=0)
+        for i in range(total_reg):
+            vals = [lst[i].strip() if i < len(lst) else "" for lst in [ciclos, reg_anos, reg_escolas, reg_municipios, reg_ufs, reg_obs]]
+            if any(vals):
+                conn.execute(
+                    """INSERT INTO historico_registros_editaveis
+                    (aluno_id, ciclo_serie, ano, unidade_escolar, municipio, uf, observacao, ordem)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", (aluno_id, *vals, i)
+                )
+
+        conn.execute("DELETE FROM historico_educacao_fisica WHERE aluno_id = ?", (aluno_id,))
+        ef_anos = request.form.getlist("ef_ano[]")
+        ef_series = request.form.getlist("ef_serie[]")
+        ef_aulas = request.form.getlist("ef_aulas[]")
+        ef_freqs = request.form.getlist("ef_frequencia[]")
+        total_ef = max(map(len, [ef_anos, ef_series, ef_aulas, ef_freqs]), default=0)
+        for i in range(total_ef):
+            vals = [lst[i].strip() if i < len(lst) else "" for lst in [ef_anos, ef_series, ef_aulas, ef_freqs]]
+            if any(vals):
+                conn.execute(
+                    """INSERT INTO historico_educacao_fisica
+                    (aluno_id, ano_letivo, serie, aulas_dadas, frequencia, ordem) VALUES (?, ?, ?, ?, ?, ?)""",
+                    (aluno_id, *vals, i)
+                )
+
+        conn.commit()
+        conn.close()
+        log_action("EDITAR_HISTORICO_COMPLETO", "historico_documentos", aluno_id, f"Histórico completo de {aluno['nome']}")
+        flash("Histórico salvo. Nenhuma nota ou cadastro original foi alterado.")
+        return redirect(url_for("historico_transferencia", aluno_id=aluno_id))
+
+    documento = conn.execute("SELECT * FROM historico_documentos WHERE aluno_id = ?", (aluno_id,)).fetchone()
+    rendimentos = conn.execute("SELECT * FROM historico_rendimentos_editaveis WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)).fetchall()
+    registros = conn.execute("SELECT * FROM historico_registros_editaveis WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)).fetchall()
+    educacao_fisica = conn.execute("SELECT * FROM historico_educacao_fisica WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)).fetchall()
+    conn.close()
+    return render_template("historico_editar.html", aluno=aluno, documento=documento, rendimentos=rendimentos, registros=registros, educacao_fisica=educacao_fisica)
 
 
 @app.route("/buscar")

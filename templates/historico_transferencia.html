@@ -50,7 +50,8 @@
 <div class="card no-print">
     <div class="warning">Histórico escolar em modelo frente e verso. Use impressão em A4 paisagem. Revise os dados antes de assinar.</div>
     <div class="actions" style="justify-content:flex-end;">
-        <a class="btn btn-secundario" href="{{ url_for('historico_manual', aluno_id=aluno.id) }}">Lançar notas de anos anteriores/outras escolas</a>
+        <a class="btn btn-secundario" href="{{ url_for('historico_manual', aluno_id=aluno.id) }}">Lançamento antigo simplificado</a>
+        <a class="btn btn-secundario" href="{{ url_for('historico_transferencia_editar', aluno_id=aluno.id) }}">Editar todos os campos</a>
         <button onclick="window.print()" class="btn btn-verde">Imprimir histórico frente e verso</button>
     </div>
 </div>
@@ -67,20 +68,20 @@
     </div>
 
     <div class="hist-grid">
-        <div><strong>Unidade escolar</strong>{{ school_settings.school_name }}</div>
-        <div><strong>CNPJ</strong>{{ school_settings.cnpj or '' }}</div>
-        <div><strong>Endereço</strong>Av. Frei Henrique de Coimbra</div>
-        <div><strong>Nº</strong>274</div>
-        <div><strong>Bairro</strong>Monte Líbano</div>
-        <div><strong>Município</strong>Rondonópolis</div>
-        <div><strong>UF</strong>MT</div>
-        <div><strong>Entidade mantenedora</strong>Privado</div>
+        <div><strong>Unidade escolar</strong>{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}</div>
+        <div><strong>CNPJ</strong>{{ documento['cnpj'] if documento and documento['cnpj'] else (school_settings.cnpj or '') }}</div>
+        <div><strong>Endereço</strong>{{ documento['endereco'] if documento and documento['endereco'] else 'Av. Frei Henrique de Coimbra' }}</div>
+        <div><strong>Nº</strong>{{ documento['numero'] if documento and documento['numero'] else '274' }}</div>
+        <div><strong>Bairro</strong>{{ documento['bairro'] if documento and documento['bairro'] else 'Monte Líbano' }}</div>
+        <div><strong>Município</strong>{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}</div>
+        <div><strong>UF</strong>{{ documento['uf'] if documento and documento['uf'] else 'MT' }}</div>
+        <div><strong>Entidade mantenedora</strong>{{ documento['mantenedora'] if documento and documento['mantenedora'] else 'Privado' }}</div>
         <div><strong>Nome do aluno</strong>{{ aluno.nome }}</div>
-        <div><strong>Código / Matrícula</strong>{{ aluno.codigo_aluno or '' }}</div>
+        <div><strong>Código / Matrícula</strong>{{ documento['codigo_matricula'] if documento and documento['codigo_matricula'] else (aluno.codigo_aluno or '') }}</div>
         <div><strong>Data de nascimento</strong>{{ aluno.data_nascimento or '' }}</div>
-        <div><strong>Turno atual</strong>{{ aluno.turma_turno or '' }}</div>
+        <div><strong>Turno atual</strong>{{ documento['turno_atual'] if documento and documento['turno_atual'] else (aluno.turma_turno or '') }}</div>
         <div><strong>RG / CPF do aluno</strong>{{ aluno.rg_aluno or '' }} {{ aluno.cpf_aluno or '' }}</div>
-        <div><strong>Nacionalidade</strong>Brasileira</div>
+        <div><strong>Nacionalidade</strong>{{ documento['nacionalidade'] if documento and documento['nacionalidade'] else 'Brasileira' }}</div>
         <div><strong>Nome do pai</strong>{{ aluno.nome_pai or '' }}</div>
         <div><strong>Nome da mãe</strong>{{ aluno.nome_mae or '' }}</div>
     </div>
@@ -97,16 +98,20 @@
             <th class="w-faltas">Faltas</th>
             <th class="w-res">Resultado</th>
         </tr>
+        {% if rendimentos_editaveis %}
+        {% for item in rendimentos_editaveis %}
+        <tr>
+            <td>{{ item.ano }}</td><td>{{ item.serie }}</td>
+            <td>{{ item.escola }}{% if item.municipio or item.uf %}<br><span class="hist-small">{{ item.municipio }} {{ item.uf }}</span>{% endif %}</td>
+            <td>{{ item.disciplina }}</td><td>{{ item.nota_conceito }}</td><td>{{ item.carga_horaria }}</td><td>{{ item.faltas }}</td><td class="nowrap">{{ item.resultado }}</td>
+        </tr>
+        {% endfor %}
+        {% else %}
         {% for item in historico_externo %}
         <tr>
-            <td>{{ item.ano_letivo }}</td>
-            <td>{{ item.serie }}</td>
+            <td>{{ item.ano_letivo }}</td><td>{{ item.serie }}</td>
             <td>{{ item.escola }}{% if item.municipio or item.uf %}<br><span class="hist-small">{{ item.municipio }} {{ item.uf }}</span>{% endif %}</td>
-            <td>{{ item.disciplina }}</td>
-            <td>{{ item.nota_final }}</td>
-            <td>{{ item.carga_horaria }}</td>
-            <td>{{ item.faltas }}</td>
-            <td class="nowrap">{{ item.resultado }}</td>
+            <td>{{ item.disciplina }}</td><td>{{ item.nota_final }}</td><td>{{ item.carga_horaria }}</td><td>{{ item.faltas }}</td><td class="nowrap">{{ item.resultado }}</td>
         </tr>
         {% endfor %}
         {% for item in linhas %}
@@ -117,26 +122,19 @@
             {% set anual = media_anual([b1, b2, b3, b4]) %}
             {% set faltas = (item['b1_faltas'] or 0) + (item['b2_faltas'] or 0) + (item['b3_faltas'] or 0) + (item['b4_faltas'] or 0) %}
         <tr>
-            <td>{{ aluno.ano_letivo or current_year }}</td>
-            <td>{{ aluno.turma_serie or '' }}</td>
-            <td>{{ school_settings.school_name }}</td>
-            <td>{{ item.disciplina_nome }}</td>
-            <td>{{ format_nota(anual) }}</td>
-            <td></td>
-            <td>{{ faltas if faltas else '' }}</td>
-            <td class="nowrap {{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
+            <td>{{ aluno.ano_letivo or current_year }}</td><td>{{ aluno.turma_serie or '' }}</td><td>{{ school_settings.school_name }}</td><td>{{ item.disciplina_nome }}</td>
+            <td>{{ format_nota(anual) }}</td><td></td><td>{{ faltas if faltas else '' }}</td><td class="nowrap {{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
         </tr>
         {% endfor %}
-        {% if not historico_externo and not linhas %}
-        <tr><td colspan="8">Nenhum rendimento registrado. Use a tela “Lançar notas de anos anteriores/outras escolas”.</td></tr>
         {% endif %}
+        {% if not rendimentos_editaveis and not historico_externo and not linhas %}<tr><td colspan="8">Nenhum rendimento registrado.</td></tr>{% endif %}
     </table>
 
     <div class="hist-section">Registros complementares</div>
     <table class="hist-table">
         <tr><th>Ciclo/Segmento/Série</th><th>Ano</th><th>Unidade escolar</th><th>Município</th><th>UF</th><th>Observações</th></tr>
         {% for hist in historico_matriculas %}
-        <tr><td>{{ hist.serie }}</td><td>{{ hist.ano_letivo }}</td><td>{{ school_settings.school_name }}</td><td>Rondonópolis</td><td>MT</td><td>{{ hist.observacoes or '' }}</td></tr>
+        <tr><td>{{ hist.serie }}</td><td>{{ hist.ano_letivo }}</td><td>{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}</td><td>{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}</td><td>{{ documento['uf'] if documento and documento['uf'] else 'MT' }}</td><td>{{ hist.observacoes or '' }}</td></tr>
         {% endfor %}
         {% for item in historico_externo %}
         <tr><td>{{ item.serie }}</td><td>{{ item.ano_letivo }}</td><td>{{ item.escola }}</td><td>{{ item.municipio }}</td><td>{{ item.uf }}</td><td>{{ item.observacoes }}</td></tr>
@@ -152,7 +150,7 @@
         <div>
             <div class="hist-section">Equivalência / observações legais</div>
             <div class="hist-note-box">
-                O Ensino Fundamental de 9 anos é registrado conforme a organização escolar vigente. As informações de rendimento, frequência, carga horária e resultado devem corresponder aos registros arquivados na pasta individual do estudante. Em caso de transferência, este documento acompanha a vida escolar do aluno para continuidade dos estudos.
+{{ documento['observacoes_legais'] if documento and documento['observacoes_legais'] else 'O Ensino Fundamental de 9 anos é registrado conforme a organização escolar vigente. As informações de rendimento, frequência, carga horária e resultado devem corresponder aos registros arquivados na pasta individual do estudante.' }}
             </div>
 
             <div class="hist-section">Histórico de matrícula na unidade escolar</div>
@@ -164,30 +162,32 @@
             </table>
 
             <div class="hist-section">Observações</div>
-            <div class="hist-note-box">{{ aluno.observacoes or 'Sem observações registradas.' }}</div>
+            <div class="hist-note-box">{{ documento['observacoes_gerais'] if documento and documento['observacoes_gerais'] else (aluno.observacoes or 'Sem observações registradas.') }}</div>
         </div>
         <div>
             <div class="hist-section">Educação Física</div>
             <table class="hist-table">
                 <tr><th>Ano letivo</th><th>Série</th><th>Aulas dadas</th><th>Frequência</th></tr>
-                {% for hist in historico_matriculas %}
-                <tr><td>{{ hist.ano_letivo }}</td><td>{{ hist.serie }}</td><td></td><td></td></tr>
-                {% endfor %}
+                {% if educacao_fisica %}
+                {% for item in educacao_fisica %}<tr><td>{{ item.ano_letivo }}</td><td>{{ item.serie }}</td><td>{{ item.aulas_dadas }}</td><td>{{ item.frequencia }}</td></tr>{% endfor %}
+                {% else %}
+                {% for hist in historico_matriculas %}<tr><td>{{ hist.ano_letivo }}</td><td>{{ hist.serie }}</td><td></td><td></td></tr>{% endfor %}
                 {% if not historico_matriculas %}<tr><td></td><td></td><td></td><td></td></tr>{% endif %}
+                {% endif %}
             </table>
 
             <div class="hist-section">Certificado</div>
             <div class="hist-cert">
-                Certifico que <strong>{{ aluno.nome }}</strong> concluiu/está cursando a etapa registrada neste Histórico Escolar, conforme os registros constantes na documentação escolar, observada a legislação educacional vigente.
+                <strong>{{ aluno.nome }}</strong><br>{{ documento['certificado_texto'] if documento and documento['certificado_texto'] else 'Certifico que o(a) aluno(a) acima identificado(a) concluiu/está cursando a etapa registrada neste Histórico Escolar, conforme os registros constantes na documentação escolar e a legislação educacional vigente.' }}
                 <br><br>
-                Local: {{ school_settings.city or 'Rondonópolis - MT' }}<br>
-                Data: ____/____/________
+                Local: {{ documento['local_emissao'] if documento and documento['local_emissao'] else (school_settings.city or 'Rondonópolis - MT') }}<br>
+                Data: {{ documento['data_emissao'] if documento and documento['data_emissao'] else '____/____/________' }}
                 <div class="hist-sign">
                     <div>Diretor(a)<br>Assinatura e carimbo</div>
                     <div>Secretário(a)<br>Assinatura e carimbo</div>
                 </div>
             </div>
-            <div style="margin-top:8px;" class="hist-stamp">Carimbo da escola</div>
+            <div style="margin-top:8px;" class="hist-stamp">{{ documento['carimbo_texto'] if documento and documento['carimbo_texto'] else 'Carimbo da escola' }}</div>
         </div>
     </div>
 
