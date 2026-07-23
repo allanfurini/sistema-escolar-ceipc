@@ -1,99 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Editar histórico escolar{% endblock %}
-{% block extra_head %}
-<style>
-  .edit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-  .edit-grid .span-2{grid-column:span 2}.edit-grid .span-4{grid-column:1/-1}
-  .table-edit{width:100%;border-collapse:collapse;min-width:1100px}.table-edit th,.table-edit td{border:1px solid #cbd5e1;padding:4px}.table-edit input{width:100%;min-width:70px;padding:6px;border:1px solid #d7dfeb;border-radius:4px;box-sizing:border-box}
-  .scroll{overflow-x:auto}.section-title{margin:24px 0 10px;color:#173b6d}.row-remove{background:#b91c1c;color:white;border:0;border-radius:5px;padding:6px 9px;cursor:pointer}
-  .muted{color:#64748b;font-size:13px}.sticky-actions{position:sticky;bottom:0;background:white;border-top:1px solid #dbe3ee;padding:12px;display:flex;justify-content:flex-end;gap:10px;z-index:5}
-  textarea{width:100%;min-height:90px;box-sizing:border-box}
-  @media(max-width:900px){.edit-grid{grid-template-columns:1fr 1fr}.edit-grid .span-4{grid-column:1/-1}}
-</style>
+{% block title %}Editar histórico · {{ aluno.nome }}{% endblock %}
+{% block head %}
+<style>.edit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.span-2{grid-column:span 2}.matrix-wrap{overflow:auto}.matrix{border-collapse:collapse;min-width:1500px;width:100%}.matrix th,.matrix td{border:1px solid #ccd7e6;padding:4px;text-align:center}.matrix input{width:100%;min-width:52px;padding:5px;box-sizing:border-box}.matrix .disc{min-width:170px;text-align:left}.reg-table{width:100%;border-collapse:collapse}.reg-table th,.reg-table td{border:1px solid #ccd7e6;padding:5px}.reg-table input{width:100%;box-sizing:border-box}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #ddd;padding:12px;display:flex;justify-content:flex-end;gap:10px}textarea{width:100%;min-height:85px;box-sizing:border-box}@media(max-width:900px){.edit-grid{grid-template-columns:1fr 1fr}.span-2{grid-column:1/-1}}</style>
 {% endblock %}
 {% block content %}
-<div class="card">
-  <h2>Editar histórico escolar — {{ aluno.nome }}</h2>
-  <p class="muted">Esta tela salva somente os campos do histórico. Ela não apaga nem altera o cadastro do aluno, as matrículas ou as notas do diário.</p>
-</div>
-<form method="post">
-<div class="card">
-  <h3 class="section-title">Dados da escola e do documento</h3>
-  <div class="edit-grid">
-    <label class="span-2">Unidade escolar<input name="unidade_escolar" value="{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}"></label>
-    <label>CNPJ<input name="cnpj" value="{{ documento['cnpj'] if documento and documento['cnpj'] else school_settings.cnpj }}"></label>
-    <label>Mantenedora<input name="mantenedora" value="{{ documento['mantenedora'] if documento and documento['mantenedora'] else 'Privado' }}"></label>
-    <label class="span-2">Endereço<input name="endereco" value="{{ documento['endereco'] if documento and documento['endereco'] else 'Av. Frei Henrique de Coimbra' }}"></label>
-    <label>Número<input name="numero" value="{{ documento['numero'] if documento and documento['numero'] else '274' }}"></label>
-    <label>Bairro<input name="bairro" value="{{ documento['bairro'] if documento and documento['bairro'] else 'Monte Líbano' }}"></label>
-    <label>Município<input name="municipio" value="{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}"></label>
-    <label>UF<input name="uf" maxlength="2" value="{{ documento['uf'] if documento and documento['uf'] else 'MT' }}"></label>
-    <label>Código/Matrícula<input name="codigo_matricula" value="{{ documento['codigo_matricula'] if documento and documento['codigo_matricula'] else (aluno.codigo_aluno or '') }}"></label>
-    <label>Nacionalidade<input name="nacionalidade" value="{{ documento['nacionalidade'] if documento and documento['nacionalidade'] else 'Brasileira' }}"></label>
-    <label>Turno atual<input name="turno_atual" value="{{ documento['turno_atual'] if documento and documento['turno_atual'] else (aluno.turma_turno or '') }}"></label>
-    <label>Local de emissão<input name="local_emissao" value="{{ documento['local_emissao'] if documento and documento['local_emissao'] else school_settings.city }}"></label>
-    <label>Data de emissão<input name="data_emissao" placeholder="dd/mm/aaaa" value="{{ documento['data_emissao'] if documento and documento['data_emissao'] else '' }}"></label>
-  </div>
-
-  <h3 class="section-title">Ano atual — dados protegidos do diário</h3>
-  <p class="muted">As notas e disciplinas abaixo vêm do diário e nunca são apagadas ao salvar este histórico. Aqui você pode preencher somente a carga horária por componente ou a carga horária anual.</p>
-  <div class="edit-grid">
-    <label>Carga horária anual<input name="carga_horaria_anual" value="{{ documento['carga_horaria_anual'] if documento and documento['carga_horaria_anual'] else '' }}" placeholder="Ex.: 800"></label>
-  </div>
-  <div class="scroll"><table class="table-edit"><thead><tr><th>Ano</th><th>Série/Ano</th><th>Componente curricular</th><th>Carga horária</th></tr></thead><tbody>
-  {% for item in current_rows %}
-  <tr>
-    <td>{{ aluno.ano_letivo or current_year }}</td>
-    <td>{{ aluno.turma_serie or '' }}</td>
-    <td>{{ item.disciplina_nome }}<input type="hidden" name="current_disciplina_id[]" value="{{ item.disciplina_id }}"></td>
-    <td><input name="current_ch[]" value="{{ item.carga_horaria or '' }}" placeholder="Ex.: 80"></td>
-  </tr>
-  {% endfor %}
-  {% if not current_rows %}<tr><td colspan="4">Nenhuma disciplina atual encontrada no diário.</td></tr>{% endif %}
-  </tbody></table></div>
-
-  <h3 class="section-title">Anos anteriores e outras escolas — linhas manuais</h3>
-  <p class="muted">Use uma linha para cada componente curricular de cada ano/escola. Salvar esta área não altera nem exclui o ano atual, as notas do diário ou as demais disciplinas.</p>
-  <div class="scroll"><table class="table-edit" id="rendimentos-table"><thead><tr><th>Ano</th><th>Série/Ano</th><th>Escola</th><th>Município</th><th>UF</th><th>Componente</th><th>Nota/Conceito</th><th>CH</th><th>Faltas</th><th>Resultado</th><th></th></tr></thead><tbody>
-  {% for item in rendimentos %}
-  <tr><td><input name="rend_ano[]" value="{{ item.ano }}"></td><td><input name="rend_serie[]" value="{{ item.serie }}"></td><td><input name="rend_escola[]" value="{{ item.escola }}"></td><td><input name="rend_municipio[]" value="{{ item.municipio }}"></td><td><input name="rend_uf[]" value="{{ item.uf }}"></td><td><input name="rend_disciplina[]" value="{{ item.disciplina }}"></td><td><input name="rend_nota[]" value="{{ item.nota_conceito }}"></td><td><input name="rend_ch[]" value="{{ item.carga_horaria }}"></td><td><input name="rend_faltas[]" value="{{ item.faltas }}"></td><td><input name="rend_resultado[]" value="{{ item.resultado }}"></td><td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>
-  {% endfor %}
-  </tbody></table></div>
-  <button type="button" class="btn btn-secundario" onclick="addRendimento()">+ Adicionar linha</button>
-
-  <h3 class="section-title">Registros complementares</h3>
-  <div class="scroll"><table class="table-edit" id="registros-table"><thead><tr><th>Ciclo/Segmento/Série</th><th>Ano</th><th>Unidade escolar</th><th>Município</th><th>UF</th><th>Observação</th><th></th></tr></thead><tbody>
-  {% for item in registros %}
-  <tr><td><input name="reg_ciclo[]" value="{{ item.ciclo_serie }}"></td><td><input name="reg_ano[]" value="{{ item.ano }}"></td><td><input name="reg_escola[]" value="{{ item.unidade_escolar }}"></td><td><input name="reg_municipio[]" value="{{ item.municipio }}"></td><td><input name="reg_uf[]" value="{{ item.uf }}"></td><td><input name="reg_obs[]" value="{{ item.observacao }}"></td><td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>
-  {% endfor %}
-  </tbody></table></div>
-  <button type="button" class="btn btn-secundario" onclick="addRegistro()">+ Adicionar registro</button>
-
-  <h3 class="section-title">Verso do histórico</h3>
-  <label>Equivalência / observações legais<textarea name="observacoes_legais">{{ documento['observacoes_legais'] if documento and documento['observacoes_legais'] else 'O Ensino Fundamental de 9 anos é registrado conforme a organização escolar vigente. As informações de rendimento, frequência, carga horária e resultado devem corresponder aos registros arquivados na pasta individual do estudante.' }}</textarea></label>
-  <label>Observações gerais<textarea name="observacoes_gerais">{{ documento['observacoes_gerais'] if documento and documento['observacoes_gerais'] else (aluno.observacoes or '') }}</textarea></label>
-
-  <h3 class="section-title">Educação Física</h3>
-  <div class="scroll"><table class="table-edit" id="ef-table"><thead><tr><th>Ano letivo</th><th>Série</th><th>Aulas dadas</th><th>Frequência</th><th></th></tr></thead><tbody>
-  {% for item in educacao_fisica %}
-  <tr><td><input name="ef_ano[]" value="{{ item.ano_letivo }}"></td><td><input name="ef_serie[]" value="{{ item.serie }}"></td><td><input name="ef_aulas[]" value="{{ item.aulas_dadas }}"></td><td><input name="ef_frequencia[]" value="{{ item.frequencia }}"></td><td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>
-  {% endfor %}
-  </tbody></table></div>
-  <button type="button" class="btn btn-secundario" onclick="addEF()">+ Adicionar linha</button>
-
-  <h3 class="section-title">Certificação</h3>
-  <label>Texto do certificado<textarea name="certificado_texto">{{ documento['certificado_texto'] if documento and documento['certificado_texto'] else 'Certifico que o(a) aluno(a) acima identificado(a) concluiu/está cursando a etapa registrada neste Histórico Escolar, conforme os registros constantes na documentação escolar e a legislação educacional vigente.' }}</textarea></label>
-  <label>Texto dentro da área de carimbo<input name="carimbo_texto" value="{{ documento['carimbo_texto'] if documento and documento['carimbo_texto'] else 'Carimbo da escola' }}"></label>
-</div>
-<div class="sticky-actions"><a class="btn btn-secundario" href="{{ url_for('historico_transferencia', aluno_id=aluno.id) }}">Cancelar</a><button class="btn btn-verde" type="submit">Salvar histórico completo</button></div>
-</form>
-<script>
-const inp=(n)=>`<td><input name="${n}[]"></td>`;
-function addRendimento(){document.querySelector('#rendimentos-table tbody').insertAdjacentHTML('beforeend',`<tr>${inp('rend_ano')}${inp('rend_serie')}${inp('rend_escola')}${inp('rend_municipio')}${inp('rend_uf')}${inp('rend_disciplina')}${inp('rend_nota')}${inp('rend_ch')}${inp('rend_faltas')}${inp('rend_resultado')}<td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>`)}
-function addRegistro(){document.querySelector('#registros-table tbody').insertAdjacentHTML('beforeend',`<tr>${inp('reg_ciclo')}${inp('reg_ano')}${inp('reg_escola')}${inp('reg_municipio')}${inp('reg_uf')}${inp('reg_obs')}<td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>`)}
-function addEF(){document.querySelector('#ef-table tbody').insertAdjacentHTML('beforeend',`<tr>${inp('ef_ano')}${inp('ef_serie')}${inp('ef_aulas')}${inp('ef_frequencia')}<td><button type="button" class="row-remove" onclick="this.closest('tr').remove()">Excluir</button></td></tr>`)}
-if(!document.querySelector('#rendimentos-table tbody tr')) addRendimento();
-if(!document.querySelector('#registros-table tbody tr')) addRegistro();
-if(!document.querySelector('#ef-table tbody tr')) addEF();
-</script>
+<div class="card"><h2>Editar histórico escolar — {{ aluno.nome }}</h2><p class="muted">As matérias ficam nas linhas e as séries nas colunas. Os dados do diário atual permanecem protegidos e não são apagados.</p></div>
+<form method="post"><div class="card"><h3>Dados da escola e do documento</h3><div class="edit-grid">
+<label class="span-2">Unidade escolar<input name="unidade_escolar" value="{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}"></label><label>CNPJ<input name="cnpj" value="{{ documento['cnpj'] if documento and documento['cnpj'] else school_settings.cnpj }}"></label><label>Mantenedora<input name="mantenedora" value="{{ documento['mantenedora'] if documento and documento['mantenedora'] else 'Privado' }}"></label>
+<label class="span-2">Endereço<input name="endereco" value="{{ documento['endereco'] if documento and documento['endereco'] else 'Av. Frei Henrique de Coimbra' }}"></label><label>Número<input name="numero" value="{{ documento['numero'] if documento and documento['numero'] else '274' }}"></label><label>Bairro<input name="bairro" value="{{ documento['bairro'] if documento and documento['bairro'] else 'Monte Líbano' }}"></label>
+<label>Município<input name="municipio" value="{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}"></label><label>UF<input name="uf" value="{{ documento['uf'] if documento and documento['uf'] else 'MT' }}"></label><label>Código/Matrícula<input name="codigo_matricula" value="{{ documento['codigo_matricula'] if documento and documento['codigo_matricula'] else (aluno.codigo_aluno or '') }}"></label><label>Nacionalidade<input name="nacionalidade" value="{{ documento['nacionalidade'] if documento and documento['nacionalidade'] else 'Brasileira' }}"></label>
+<label>Turno atual<input name="turno_atual" value="{{ documento['turno_atual'] if documento and documento['turno_atual'] else (aluno.turma_turno or '') }}"></label><label>Local de emissão<input name="local_emissao" value="{{ documento['local_emissao'] if documento and documento['local_emissao'] else school_settings.city }}"></label><label>Data de emissão<input name="data_emissao" value="{{ documento['data_emissao'] if documento and documento['data_emissao'] else '' }}"></label><label>Carga horária anual<input name="carga_horaria_anual" value="{{ documento['carga_horaria_anual'] if documento and documento['carga_horaria_anual'] else '' }}"></label></div>
+<h3>Rendimento escolar — anos anteriores</h3><p class="muted">Digite somente anos anteriores ou dados externos. O ano atual vem automaticamente do Diário/Boletim.</p><div class="matrix-wrap"><table class="matrix" id="matrix"><thead><tr><th rowspan="2">Matéria</th>{% for serie in series_historico %}<th colspan="2">{{ serie.label }}</th>{% endfor %}<th rowspan="2"></th></tr><tr>{% for serie in series_historico %}<th>N/C</th><th>CH</th>{% endfor %}</tr></thead><tbody>
+{% for disciplina in disciplinas_manuais %}<tr><td class="disc"><input name="matrix_disciplina[]" value="{{ disciplina }}"></td>{% for serie in series_historico %}{% set cell = matriz_manual.get((disciplina.casefold(), serie.indice)) %}<td><input name="matrix_nota_{{ serie.indice }}[]" value="{{ cell.nota if cell else '' }}"></td><td><input name="matrix_ch_{{ serie.indice }}[]" value="{{ cell.ch if cell else '' }}"></td>{% endfor %}<td><button type="button" class="btn btn-perigo" onclick="this.closest('tr').remove()">Excluir</button></td></tr>{% endfor %}
+</tbody></table></div><button type="button" class="btn btn-secundario" onclick="addSubject()">+ Adicionar matéria</button>
+<h3>Ano atual — carga horária por matéria</h3><table class="reg-table"><tr><th>Matéria</th><th>Carga horária</th></tr>{% for item in current_rows %}<tr><td>{{ item.disciplina_nome }}<input type="hidden" name="current_disciplina_id[]" value="{{ item.disciplina_id }}"></td><td><input name="current_ch[]" value="{{ item.carga_horaria or '' }}"></td></tr>{% endfor %}</table>
+<h3>Registros complementares — digitados separadamente</h3><p class="muted">Informe, para cada série, o ano, escola, município, UF e observação. Estes dados não ficam misturados com as notas.</p><table class="reg-table"><thead><tr><th>Série</th><th>Ano</th><th>Unidade escolar</th><th>Município</th><th>UF</th><th>Observação</th></tr></thead><tbody>{% for serie in series_historico %}{% set reg = registros_por_serie.get(serie.indice) %}<tr><td><input name="reg_ciclo[]" value="{{ serie.label }}" readonly></td><td><input name="reg_ano[]" value="{{ reg.ano if reg else '' }}"></td><td><input name="reg_escola[]" value="{{ reg.unidade_escolar if reg else '' }}"></td><td><input name="reg_municipio[]" value="{{ reg.municipio if reg else '' }}"></td><td><input name="reg_uf[]" value="{{ reg.uf if reg else '' }}"></td><td><input name="reg_obs[]" value="{{ reg.observacao if reg else '' }}"></td></tr>{% endfor %}</tbody></table>
+<h3>Verso do histórico</h3><label>Equivalência / observações legais<textarea name="observacoes_legais">{{ documento['observacoes_legais'] if documento and documento['observacoes_legais'] else '' }}</textarea></label><label>Observações gerais<textarea name="observacoes_gerais">{{ documento['observacoes_gerais'] if documento and documento['observacoes_gerais'] else (aluno.observacoes or '') }}</textarea></label>
+<h3>Educação Física</h3><table class="reg-table" id="ef-table"><tr><th>Ano</th><th>Série</th><th>Aulas dadas</th><th>Frequência</th><th></th></tr>{% for item in educacao_fisica %}<tr><td><input name="ef_ano[]" value="{{ item.ano_letivo }}"></td><td><input name="ef_serie[]" value="{{ item.serie }}"></td><td><input name="ef_aulas[]" value="{{ item.aulas_dadas }}"></td><td><input name="ef_frequencia[]" value="{{ item.frequencia }}"></td><td><button type="button" onclick="this.closest('tr').remove()">Excluir</button></td></tr>{% endfor %}</table><button type="button" class="btn btn-secundario" onclick="addEF()">+ Adicionar</button>
+<h3>Certificação</h3><label>Texto do certificado<textarea name="certificado_texto">{{ documento['certificado_texto'] if documento and documento['certificado_texto'] else '' }}</textarea></label><label>Área de carimbo<input name="carimbo_texto" value="{{ documento['carimbo_texto'] if documento and documento['carimbo_texto'] else 'Carimbo da escola' }}"></label></div><div class="sticky-actions"><a class="btn btn-secundario" href="{{ url_for('historico_transferencia', aluno_id=aluno.id) }}">Cancelar</a><button class="btn btn-verde" type="submit">Salvar histórico</button></div></form>
+<script>function addSubject(){let cells='';for(let i=1;i<=9;i++)cells+=`<td><input name="matrix_nota_${i}[]"></td><td><input name="matrix_ch_${i}[]"></td>`;document.querySelector('#matrix tbody').insertAdjacentHTML('beforeend',`<tr><td class="disc"><input name="matrix_disciplina[]"></td>${cells}<td><button type="button" class="btn btn-perigo" onclick="this.closest('tr').remove()">Excluir</button></td></tr>`)}function addEF(){document.querySelector('#ef-table tbody').insertAdjacentHTML('beforeend','<tr><td><input name="ef_ano[]"></td><td><input name="ef_serie[]"></td><td><input name="ef_aulas[]"></td><td><input name="ef_frequencia[]"></td><td><button type="button" onclick="this.closest(\'tr\').remove()">Excluir</button></td></tr>')}if(!document.querySelector('#matrix tbody tr'))addSubject();</script>
 {% endblock %}

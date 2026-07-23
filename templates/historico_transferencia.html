@@ -2,192 +2,31 @@
 {% block title %}Histórico escolar · {{ aluno.nome }}{% endblock %}
 {% block head %}
 <style>
-    .hist-sheet { font-family:'Times New Roman', Times, serif; color:#111; background:#fff; border:1px solid #111; padding:10px; margin-bottom:16px; }
-    .hist-title { text-align:center; font-weight:bold; font-size:15px; margin:0 0 8px; text-transform:uppercase; }
-    .hist-subtitle { text-align:center; font-weight:bold; font-size:13px; margin:2px 0 10px; text-transform:uppercase; }
-    .hist-small { font-size:10px; }
-    .hist-grid { display:grid; grid-template-columns:1.2fr .7fr 1fr .45fr; border:1px solid #111; border-bottom:0; }
-    .hist-grid div { border-right:1px solid #111; border-bottom:1px solid #111; padding:4px 5px; min-height:25px; font-size:10px; }
-    .hist-grid div:nth-child(4n) { border-right:0; }
-    .hist-grid strong { display:block; font-size:9px; text-transform:uppercase; }
-    .hist-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-    .hist-table th, .hist-table td { border:1px solid #111; padding:3px; font-size:8.5px; line-height:1.05; text-align:center; vertical-align:middle; color:#111; background:#fff; word-break:normal; }
-    .hist-table th { font-weight:bold; }
-    .hist-table td:first-child, .hist-table th:first-child { text-align:left; }
-    .hist-section { font-size:11px; font-weight:bold; text-align:center; margin:8px 0 4px; text-transform:uppercase; }
-    .hist-note-box { border:1px solid #111; min-height:58px; padding:6px; font-size:10px; }
-    .hist-two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .hist-cert { border:1px solid #111; min-height:160px; padding:12px; font-size:12px; line-height:1.45; }
-    .hist-sign { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:22px; }
-    .hist-sign div { border-top:1px solid #111; text-align:center; padding-top:5px; font-size:10px; }
-    .hist-stamp { border:1px solid #111; min-height:110px; display:flex; align-items:center; justify-content:center; font-size:11px; color:#444; }
-    .hist-logo-row { display:grid; grid-template-columns:80px 1fr 80px; align-items:center; gap:10px; }
-    .hist-logo-row img { max-width:68px; max-height:68px; object-fit:contain; }
-    .hist-page-label { text-align:right; font-size:10px; margin-bottom:4px; }
-    .nowrap { white-space:nowrap; }
-    .w-ano { width:45px; } .w-serie { width:52px; } .w-escola { width:150px; } .w-comp { width:145px; } .w-nota { width:42px; } .w-ch { width:42px; } .w-faltas { width:42px; } .w-res { width:68px; }
-
-    @media print {
-        @page { size:A4 landscape; margin:6mm; }
-        .hist-sheet { page-break-after:always; break-after:page; border:1px solid #111; padding:7px; margin:0; min-height:185mm; }
-        .hist-sheet:last-child { page-break-after:auto; break-after:auto; }
-        .hist-title { font-size:13px; margin-bottom:5px; }
-        .hist-subtitle { font-size:11px; margin-bottom:6px; }
-        .hist-grid div { font-size:8.5px; padding:2px 3px; min-height:19px; }
-        .hist-grid strong { font-size:7.5px; }
-        .hist-section { font-size:9px; margin:5px 0 3px; }
-        .hist-table th, .hist-table td { font-size:6.5px; padding:1.5px; }
-        .hist-logo-row img { max-width:42px; max-height:42px; }
-        .hist-cert { min-height:125px; font-size:9px; padding:8px; }
-        .hist-note-box { min-height:44px; font-size:8px; }
-        .hist-stamp { min-height:82px; font-size:8px; }
-        .hist-sign { margin-top:16px; }
-        .w-ano { width:36px; } .w-serie { width:42px; } .w-escola { width:118px; } .w-comp { width:112px; } .w-nota { width:34px; } .w-ch { width:34px; } .w-faltas { width:34px; } .w-res { width:54px; }
-    }
+.hist-sheet{font-family:'Times New Roman',serif;color:#111;background:#fff;border:1px solid #111;padding:8px;margin-bottom:16px}.hist-title{text-align:center;font-weight:bold;font-size:14px;text-transform:uppercase}.hist-subtitle{text-align:center;font-weight:bold;font-size:12px;margin:2px 0 8px;text-transform:uppercase}.hist-grid{display:grid;grid-template-columns:1.2fr .7fr 1fr .45fr;border:1px solid #111;border-bottom:0}.hist-grid div{border-right:1px solid #111;border-bottom:1px solid #111;padding:3px 4px;min-height:23px;font-size:9px}.hist-grid div:nth-child(4n){border-right:0}.hist-grid strong{display:block;font-size:8px;text-transform:uppercase}.hist-table{width:100%;border-collapse:collapse;table-layout:fixed}.hist-table th,.hist-table td{border:1px solid #111;padding:2px;font-size:7.5px;line-height:1.05;text-align:center;vertical-align:middle;background:#fff;color:#111}.hist-table td:first-child,.hist-table th:first-child{text-align:left}.hist-section{font-size:10px;font-weight:bold;text-align:center;margin:6px 0 3px;text-transform:uppercase}.hist-note-box{border:1px solid #111;min-height:55px;padding:5px;font-size:9px}.hist-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hist-cert{border:1px solid #111;min-height:145px;padding:10px;font-size:10px;line-height:1.4}.hist-sign{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:20px}.hist-sign div{border-top:1px solid #111;text-align:center;padding-top:4px;font-size:9px}.hist-stamp{border:1px solid #111;min-height:90px;display:flex;align-items:center;justify-content:center;font-size:10px}.hist-logo-row{display:grid;grid-template-columns:70px 1fr 70px;align-items:center}.hist-logo-row img{max-width:58px;max-height:58px;object-fit:contain}.hist-page-label{text-align:right;font-size:9px}.subject-col{width:120px}.series-head{font-size:7px}.series-pair{width:48px}.nowrap{white-space:nowrap}
+@media print{@page{size:A4 landscape;margin:5mm}.hist-sheet{page-break-after:always;break-after:page;padding:5px;margin:0;min-height:188mm}.hist-sheet:last-child{page-break-after:auto}.hist-title{font-size:12px}.hist-subtitle{font-size:10px}.hist-grid div{font-size:7.5px;min-height:18px;padding:2px}.hist-grid strong{font-size:6.5px}.hist-table th,.hist-table td{font-size:5.7px;padding:1px}.hist-section{font-size:8px;margin:4px 0 2px}.hist-logo-row img{max-width:38px;max-height:38px}.hist-note-box{min-height:42px;font-size:7px}.hist-cert{min-height:120px;font-size:8px}.hist-stamp{min-height:75px;font-size:7px}.subject-col{width:88px}.series-pair{width:39px}}
 </style>
 {% endblock %}
 {% block content %}
-<div class="card no-print">
-    <div class="warning">Histórico escolar em modelo frente e verso. Use impressão em A4 paisagem. Revise os dados antes de assinar.</div>
-    <div class="actions" style="justify-content:flex-end;">
-        <a class="btn btn-secundario" href="{{ url_for('historico_manual', aluno_id=aluno.id) }}">Lançamento antigo simplificado</a>
-        <a class="btn btn-secundario" href="{{ url_for('historico_transferencia_editar', aluno_id=aluno.id) }}">Editar todos os campos</a>
-        <button onclick="window.print()" class="btn btn-verde">Imprimir histórico frente e verso</button>
-    </div>
+<div class="card no-print"><div class="warning">Histórico escolar em modelo frente e verso. As disciplinas ficam nas linhas e as séries nas colunas.</div><div class="actions" style="justify-content:flex-end"><a class="btn btn-secundario" href="{{ url_for('historico_transferencia_editar', aluno_id=aluno.id) }}">Editar histórico</a><button onclick="window.print()" class="btn btn-verde">Imprimir frente e verso</button></div></div>
+<section class="hist-sheet">
+<div class="hist-page-label">FRENTE</div>
+<div class="hist-logo-row"><div>{% if logo_exists %}<img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo">{% endif %}</div><div><div class="hist-title">República Federativa do Brasil</div><div class="hist-subtitle">Histórico Escolar - Ensino Fundamental</div></div><div></div></div>
+<div class="hist-grid">
+<div><strong>Unidade escolar</strong>{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}</div><div><strong>CNPJ</strong>{{ documento['cnpj'] if documento and documento['cnpj'] else school_settings.cnpj }}</div><div><strong>Endereço</strong>{{ documento['endereco'] if documento and documento['endereco'] else 'Av. Frei Henrique de Coimbra' }}</div><div><strong>Nº</strong>{{ documento['numero'] if documento and documento['numero'] else '274' }}</div>
+<div><strong>Bairro</strong>{{ documento['bairro'] if documento and documento['bairro'] else 'Monte Líbano' }}</div><div><strong>Município</strong>{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}</div><div><strong>UF</strong>{{ documento['uf'] if documento and documento['uf'] else 'MT' }}</div><div><strong>Entidade mantenedora</strong>{{ documento['mantenedora'] if documento and documento['mantenedora'] else 'Privado' }}</div>
+<div><strong>Nome do aluno</strong>{{ aluno.nome }}</div><div><strong>Código / Matrícula</strong>{{ documento['codigo_matricula'] if documento and documento['codigo_matricula'] else (aluno.codigo_aluno or '') }}</div><div><strong>Data de nascimento</strong>{{ aluno.data_nascimento or '' }}</div><div><strong>Turno atual</strong>{{ documento['turno_atual'] if documento and documento['turno_atual'] else (aluno.turma_turno or '') }}</div>
+<div><strong>RG / CPF do aluno</strong>{{ aluno.rg_aluno or '' }} {{ aluno.cpf_aluno or '' }}</div><div><strong>Nacionalidade</strong>{{ documento['nacionalidade'] if documento and documento['nacionalidade'] else 'Brasileira' }}</div><div><strong>Nome do pai</strong>{{ aluno.nome_pai or '' }}</div><div><strong>Nome da mãe</strong>{{ aluno.nome_mae or '' }}</div>
 </div>
-
-<section class="hist-sheet">
-    <div class="hist-page-label">FRENTE</div>
-    <div class="hist-logo-row">
-        <div>{% if logo_exists %}<img src="{{ url_for('static', filename='logo-escola.png') }}" alt="Logo">{% endif %}</div>
-        <div>
-            <div class="hist-title">República Federativa do Brasil</div>
-            <div class="hist-subtitle">Histórico Escolar - Ensino Fundamental</div>
-        </div>
-        <div></div>
-    </div>
-
-    <div class="hist-grid">
-        <div><strong>Unidade escolar</strong>{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}</div>
-        <div><strong>CNPJ</strong>{{ documento['cnpj'] if documento and documento['cnpj'] else (school_settings.cnpj or '') }}</div>
-        <div><strong>Endereço</strong>{{ documento['endereco'] if documento and documento['endereco'] else 'Av. Frei Henrique de Coimbra' }}</div>
-        <div><strong>Nº</strong>{{ documento['numero'] if documento and documento['numero'] else '274' }}</div>
-        <div><strong>Bairro</strong>{{ documento['bairro'] if documento and documento['bairro'] else 'Monte Líbano' }}</div>
-        <div><strong>Município</strong>{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}</div>
-        <div><strong>UF</strong>{{ documento['uf'] if documento and documento['uf'] else 'MT' }}</div>
-        <div><strong>Entidade mantenedora</strong>{{ documento['mantenedora'] if documento and documento['mantenedora'] else 'Privado' }}</div>
-        <div><strong>Nome do aluno</strong>{{ aluno.nome }}</div>
-        <div><strong>Código / Matrícula</strong>{{ documento['codigo_matricula'] if documento and documento['codigo_matricula'] else (aluno.codigo_aluno or '') }}</div>
-        <div><strong>Data de nascimento</strong>{{ aluno.data_nascimento or '' }}</div>
-        <div><strong>Turno atual</strong>{{ documento['turno_atual'] if documento and documento['turno_atual'] else (aluno.turma_turno or '') }}</div>
-        <div><strong>RG / CPF do aluno</strong>{{ aluno.rg_aluno or '' }} {{ aluno.cpf_aluno or '' }}</div>
-        <div><strong>Nacionalidade</strong>{{ documento['nacionalidade'] if documento and documento['nacionalidade'] else 'Brasileira' }}</div>
-        <div><strong>Nome do pai</strong>{{ aluno.nome_pai or '' }}</div>
-        <div><strong>Nome da mãe</strong>{{ aluno.nome_mae or '' }}</div>
-    </div>
-
-    <div class="hist-section">Estudos realizados / rendimento escolar</div>
-    <table class="hist-table">
-        <tr>
-            <th class="w-ano">Ano</th>
-            <th class="w-serie">Série/Ano</th>
-            <th class="w-escola">Unidade escolar</th>
-            <th class="w-comp">Componente curricular</th>
-            <th class="w-nota">N/C</th>
-            <th class="w-ch">CH</th>
-            <th class="w-faltas">Faltas</th>
-            <th class="w-res">Resultado</th>
-        </tr>
-        {% for item in rendimentos_editaveis %}
-        <tr>
-            <td>{{ item.ano }}</td><td>{{ item.serie }}</td>
-            <td>{{ item.escola }}{% if item.municipio or item.uf %}<br><span class="hist-small">{{ item.municipio }} {{ item.uf }}</span>{% endif %}</td>
-            <td>{{ item.disciplina }}</td><td>{{ item.nota_conceito }}</td><td>{{ item.carga_horaria }}</td><td>{{ item.faltas }}</td><td class="nowrap">{{ item.resultado }}</td>
-        </tr>
-        {% endfor %}
-        {% for item in historico_externo %}
-        <tr>
-            <td>{{ item.ano_letivo }}</td><td>{{ item.serie }}</td>
-            <td>{{ item.escola }}{% if item.municipio or item.uf %}<br><span class="hist-small">{{ item.municipio }} {{ item.uf }}</span>{% endif %}</td>
-            <td>{{ item.disciplina }}</td><td>{{ item.nota_final }}</td><td>{{ item.carga_horaria }}</td><td>{{ item.faltas }}</td><td class="nowrap">{{ item.resultado }}</td>
-        </tr>
-        {% endfor %}
-        {% for item in linhas %}
-            {% set b1 = media_notas(item['b1_n1'], item['b1_n2'], item['b1_n3'], item['b1_n4']) %}
-            {% set b2 = media_notas(item['b2_n1'], item['b2_n2'], item['b2_n3'], item['b2_n4']) %}
-            {% set b3 = media_notas(item['b3_n1'], item['b3_n2'], item['b3_n3'], item['b3_n4']) %}
-            {% set b4 = media_notas(item['b4_n1'], item['b4_n2'], item['b4_n3'], item['b4_n4']) %}
-            {% set anual = media_anual([b1, b2, b3, b4]) %}
-            {% set faltas = (item['b1_faltas'] or 0) + (item['b2_faltas'] or 0) + (item['b3_faltas'] or 0) + (item['b4_faltas'] or 0) %}
-        <tr>
-            <td>{{ aluno.ano_letivo or current_year }}</td><td>{{ aluno.turma_serie or '' }}</td><td>{{ school_settings.school_name }}</td><td>{{ item.disciplina_nome }}</td>
-            <td>{{ format_nota(anual) }}</td><td>{{ item.carga_horaria_historico or '' }}</td><td>{{ faltas if faltas else '' }}</td><td class="nowrap {{ nota_css_class(anual) }}">{{ resultado_por_media(anual) }}</td>
-        </tr>
-        {% endfor %}
-        {% if not rendimentos_editaveis and not historico_externo and not linhas %}<tr><td colspan="8">Nenhum rendimento registrado.</td></tr>{% endif %}
-    </table>
-
-    <div class="hist-section">Registros complementares</div>
-    <table class="hist-table">
-        <tr><th>Ciclo/Segmento/Série</th><th>Ano</th><th>Unidade escolar</th><th>Município</th><th>UF</th><th>Observações</th></tr>
-        {% for hist in historico_matriculas %}
-        <tr><td>{{ hist.serie }}</td><td>{{ hist.ano_letivo }}</td><td>{{ documento['unidade_escolar'] if documento and documento['unidade_escolar'] else school_settings.school_name }}</td><td>{{ documento['municipio'] if documento and documento['municipio'] else 'Rondonópolis' }}</td><td>{{ documento['uf'] if documento and documento['uf'] else 'MT' }}</td><td>{{ hist.observacoes or '' }}</td></tr>
-        {% endfor %}
-        {% for item in historico_externo %}
-        <tr><td>{{ item.serie }}</td><td>{{ item.ano_letivo }}</td><td>{{ item.escola }}</td><td>{{ item.municipio }}</td><td>{{ item.uf }}</td><td>{{ item.observacoes }}</td></tr>
-        {% endfor %}
-    </table>
+<div class="hist-section">Estudos realizados / rendimento escolar</div>
+<table class="hist-table"><thead><tr><th rowspan="2" class="subject-col">Componentes curriculares</th>{% for serie in series_historico %}<th colspan="2" class="series-head">{{ serie.label }}</th>{% endfor %}</tr><tr>{% for serie in series_historico %}<th class="series-pair">N/C</th><th class="series-pair">CH</th>{% endfor %}</tr></thead><tbody>
+{% for row in matriz_historico %}<tr><td>{{ row.disciplina }}</td>{% for serie in series_historico %}{% set cell = row.series.get(serie.indice) %}<td>{{ cell.nota if cell else '' }}</td><td>{{ cell.ch if cell else '' }}</td>{% endfor %}</tr>{% endfor %}
+{% if not matriz_historico %}<tr><td colspan="19">Nenhum rendimento registrado.</td></tr>{% endif %}
+</tbody></table>
+<div class="hist-section">Registros complementares</div>
+<table class="hist-table"><thead><tr><th>Ciclo/Segmento/Série</th><th>Ano</th><th>Unidade escolar</th><th>Município</th><th>UF</th><th>Observações</th></tr></thead><tbody>
+{% for item in registros_complementares %}<tr><td>{{ item.ciclo_serie }}</td><td>{{ item.ano }}</td><td>{{ item.unidade_escolar }}</td><td>{{ item.municipio }}</td><td>{{ item.uf }}</td><td>{{ item.observacao }}</td></tr>{% endfor %}
+{% for _ in range(9 - registros_complementares|length) %}<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}
+</tbody></table>
 </section>
-
-<section class="hist-sheet">
-    <div class="hist-page-label">VERSO</div>
-    <div class="hist-title">Registros complementares e certificação</div>
-
-    <div class="hist-two">
-        <div>
-            <div class="hist-section">Equivalência / observações legais</div>
-            <div class="hist-note-box">
-{{ documento['observacoes_legais'] if documento and documento['observacoes_legais'] else 'O Ensino Fundamental de 9 anos é registrado conforme a organização escolar vigente. As informações de rendimento, frequência, carga horária e resultado devem corresponder aos registros arquivados na pasta individual do estudante.' }}
-            </div>
-
-            <div class="hist-section">Histórico de matrícula na unidade escolar</div>
-            <table class="hist-table">
-                <tr><th>Ano</th><th>Série</th><th>Turma</th><th>Turno</th><th>Início</th><th>Fim</th></tr>
-                {% for hist in historico_matriculas %}
-                <tr><td>{{ hist.ano_letivo }}</td><td>{{ hist.serie }}</td><td>{{ hist.turma_nome }}</td><td>{{ hist.turno }}</td><td>{{ hist.data_inicio or '' }}</td><td>{{ hist.data_fim or '' }}</td></tr>
-                {% endfor %}
-            </table>
-
-            <div class="hist-section">Observações</div>
-            <div class="hist-note-box">{{ documento['observacoes_gerais'] if documento and documento['observacoes_gerais'] else (aluno.observacoes or 'Sem observações registradas.') }}</div>
-        </div>
-        <div>
-            <div class="hist-section">Educação Física</div>
-            <table class="hist-table">
-                <tr><th>Ano letivo</th><th>Série</th><th>Aulas dadas</th><th>Frequência</th></tr>
-                {% if educacao_fisica %}
-                {% for item in educacao_fisica %}<tr><td>{{ item.ano_letivo }}</td><td>{{ item.serie }}</td><td>{{ item.aulas_dadas }}</td><td>{{ item.frequencia }}</td></tr>{% endfor %}
-                {% else %}
-                {% for hist in historico_matriculas %}<tr><td>{{ hist.ano_letivo }}</td><td>{{ hist.serie }}</td><td></td><td></td></tr>{% endfor %}
-                {% if not historico_matriculas %}<tr><td></td><td></td><td></td><td></td></tr>{% endif %}
-                {% endif %}
-            </table>
-
-            <div class="hist-section">Certificado</div>
-            <div class="hist-cert">
-                <strong>{{ aluno.nome }}</strong><br>{{ documento['certificado_texto'] if documento and documento['certificado_texto'] else 'Certifico que o(a) aluno(a) acima identificado(a) concluiu/está cursando a etapa registrada neste Histórico Escolar, conforme os registros constantes na documentação escolar e a legislação educacional vigente.' }}
-                <br><br>
-                Local: {{ documento['local_emissao'] if documento and documento['local_emissao'] else (school_settings.city or 'Rondonópolis - MT') }}<br>
-                Data: {{ documento['data_emissao'] if documento and documento['data_emissao'] else '____/____/________' }}
-                <div class="hist-sign">
-                    <div>Diretor(a)<br>Assinatura e carimbo</div>
-                    <div>Secretário(a)<br>Assinatura e carimbo</div>
-                </div>
-            </div>
-            <div style="margin-top:8px;" class="hist-stamp">{{ documento['carimbo_texto'] if documento and documento['carimbo_texto'] else 'Carimbo da escola' }}</div>
-        </div>
-    </div>
-
-    <div class="hist-small" style="margin-top:8px;">Legenda: N/C = Nota ou Conceito · CH = Carga Horária. Documento emitido em {{ now_label }}.</div>
-</section>
+<section class="hist-sheet"><div class="hist-page-label">VERSO</div><div class="hist-title">Registros complementares e certificação</div><div class="hist-two"><div><div class="hist-section">Equivalência / observações legais</div><div class="hist-note-box">{{ documento['observacoes_legais'] if documento and documento['observacoes_legais'] else 'O Ensino Fundamental de 9 anos é registrado conforme a organização escolar vigente. As informações de rendimento, frequência, carga horária e resultado devem corresponder aos registros arquivados na pasta individual do estudante.' }}</div><div class="hist-section">Histórico de matrícula na unidade escolar</div><table class="hist-table"><tr><th>Ano</th><th>Série</th><th>Turma</th><th>Turno</th><th>Início</th><th>Fim</th></tr>{% for hist in historico_matriculas %}<tr><td>{{ hist.ano_letivo }}</td><td>{{ hist.serie }}</td><td>{{ hist.turma_nome }}</td><td>{{ hist.turno }}</td><td>{{ hist.data_inicio or '' }}</td><td>{{ hist.data_fim or '' }}</td></tr>{% endfor %}</table><div class="hist-section">Observações</div><div class="hist-note-box">{{ documento['observacoes_gerais'] if documento and documento['observacoes_gerais'] else (aluno.observacoes or 'Sem observações registradas.') }}</div></div><div><div class="hist-section">Educação Física</div><table class="hist-table"><tr><th>Ano letivo</th><th>Série</th><th>Aulas dadas</th><th>Frequência</th></tr>{% for item in educacao_fisica %}<tr><td>{{ item.ano_letivo }}</td><td>{{ item.serie }}</td><td>{{ item.aulas_dadas }}</td><td>{{ item.frequencia }}</td></tr>{% endfor %}{% if not educacao_fisica %}<tr><td></td><td></td><td></td><td></td></tr>{% endif %}</table><div class="hist-section">Certificado</div><div class="hist-cert"><strong>{{ aluno.nome }}</strong><br>{{ documento['certificado_texto'] if documento and documento['certificado_texto'] else 'Certifico que o(a) aluno(a) acima identificado(a) concluiu/está cursando a etapa registrada neste Histórico Escolar, conforme os registros constantes na documentação escolar e a legislação educacional vigente.' }}<br><br>Local: {{ documento['local_emissao'] if documento and documento['local_emissao'] else school_settings.city }}<br>Data: {{ documento['data_emissao'] if documento and documento['data_emissao'] else '____/____/________' }}<div class="hist-sign"><div>Diretor(a)<br>Assinatura e carimbo</div><div>Secretário(a)<br>Assinatura e carimbo</div></div></div><div style="margin-top:8px" class="hist-stamp">{{ documento['carimbo_texto'] if documento and documento['carimbo_texto'] else 'Carimbo da escola' }}</div></div></div><div style="margin-top:8px;font-size:7px">Legenda: N/C = Nota ou Conceito · CH = Carga Horária. Documento emitido em {{ now_label }}.</div></section>
 {% endblock %}

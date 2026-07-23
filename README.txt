@@ -15,3 +15,10 @@ IMPORTANTE:
 - mantenha o persistent disk do Render montado no mesmo caminho;
 - faça um backup pelo sistema antes do deploy, como camada extra de segurança;
 - esta atualização não recria as tabelas de alunos, notas, turmas ou matrículas.
+
+VERSÃO 6.5
+- Histórico escolar em grade oficial: componentes curriculares nas linhas.
+- 1º ao 9º ano nas colunas, cada série com N/C e CH.
+- Registros complementares separados por série, ano, escola, município e UF.
+- Ano atual continua vindo automaticamente do Diário/Boletim.
+- Upgrade preserva alunos, notas, turmas, matrículas e históricos anteriores.

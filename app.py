@@ -539,6 +539,66 @@ def nota_css_class(media):
     return "media-ok" if media >= PASSING_GRADE else "media-bad"
 
 
+def serie_indice(valor):
+    """Converte descrições como 1º Ano, 1ª série, 6/7 em uma coluna de 1 a 9."""
+    import re
+    texto = (valor or "").strip().lower()
+    if not texto:
+        return None
+    numeros = re.findall(r"\d+", texto)
+    if not numeros:
+        return None
+    numero = int(numeros[0])
+    return numero if 1 <= numero <= 9 else None
+
+
+def montar_matriz_historico(aluno, linhas, rendimentos_editaveis, historico_externo):
+    """Monta disciplinas nas linhas e séries nas colunas sem alterar os dados originais."""
+    matriz = {}
+
+    def adicionar(disciplina, serie, nota="", ch="", faltas="", resultado="", prioridade=0):
+        disciplina = (disciplina or "").strip()
+        idx = serie_indice(serie)
+        if not disciplina or not idx:
+            return
+        chave = disciplina.casefold()
+        linha = matriz.setdefault(chave, {"disciplina": disciplina, "series": {}})
+        atual = linha["series"].get(idx)
+        if atual is None or prioridade >= atual.get("prioridade", -1):
+            linha["series"][idx] = {
+                "nota": "" if nota is None else str(nota),
+                "ch": "" if ch is None else str(ch),
+                "faltas": "" if faltas is None else str(faltas),
+                "resultado": "" if resultado is None else str(resultado),
+                "prioridade": prioridade,
+            }
+
+    # Registros antigos simplificados têm prioridade menor.
+    for item in historico_externo:
+        adicionar(item["disciplina"], item["serie"], item["nota_final"], item["carga_horaria"], item["faltas"], item["resultado"], 1)
+
+    # Linhas editáveis têm prioridade sobre importações antigas.
+    for item in rendimentos_editaveis:
+        adicionar(item["disciplina"], item["serie"], item["nota_conceito"], item["carga_horaria"], item["faltas"], item["resultado"], 2)
+
+    # O diário atual tem prioridade máxima para a série atual, sem apagar anos anteriores.
+    serie_atual = aluno["turma_serie"] if aluno else ""
+    for item in linhas:
+        b1 = media_notas(item["b1_n1"], item["b1_n2"], item["b1_n3"], item["b1_n4"])
+        b2 = media_notas(item["b2_n1"], item["b2_n2"], item["b2_n3"], item["b2_n4"])
+        b3 = media_notas(item["b3_n1"], item["b3_n2"], item["b3_n3"], item["b3_n4"])
+        b4 = media_notas(item["b4_n1"], item["b4_n2"], item["b4_n3"], item["b4_n4"])
+        anual = media_anual([b1, b2, b3, b4])
+        faltas = sum((item[f"b{i}_faltas"] or 0) for i in range(1, 5))
+        adicionar(
+            item["disciplina_nome"], serie_atual, format_nota(anual),
+            item["carga_horaria_historico"] or "", faltas if faltas else "",
+            resultado_por_media(anual), 3
+        )
+
+    return sorted(matriz.values(), key=lambda x: x["disciplina"].casefold())
+
+
 def format_nota(value):
     if value in (None, ""):
         return ""
@@ -1350,9 +1410,14 @@ def historico_transferencia(aluno_id):
 
     linhas = conn.execute(
         """
-        SELECT boletim_itens.*, disciplinas.nome AS disciplina_nome
+        SELECT boletim_itens.*, disciplinas.nome AS disciplina_nome,
+               historico_cargas_horarias.carga_horaria AS carga_horaria_historico
         FROM boletim_itens
         INNER JOIN disciplinas ON disciplinas.id = boletim_itens.disciplina_id
+        LEFT JOIN historico_cargas_horarias
+          ON historico_cargas_horarias.aluno_id = boletim_itens.aluno_id
+         AND historico_cargas_horarias.turma_id = boletim_itens.turma_id
+         AND historico_cargas_horarias.disciplina_id = boletim_itens.disciplina_id
         WHERE boletim_itens.aluno_id = ? AND boletim_itens.turma_id = ?
         ORDER BY disciplinas.nome ASC
         """,
@@ -1388,13 +1453,44 @@ def historico_transferencia(aluno_id):
     educacao_fisica = conn.execute(
         "SELECT * FROM historico_educacao_fisica WHERE aluno_id = ? ORDER BY ordem, id", (aluno_id,)
     ).fetchall()
+    matriz_historico = montar_matriz_historico(aluno, linhas, rendimentos_editaveis, historico_externo)
+    series_historico = [{"indice": i, "label": f"{i}º Ano"} for i in range(1, 10)]
+
+    # Registros complementares são independentes das notas.
+    registros_complementares = list(registros_editaveis)
+    if not registros_complementares:
+        vistos = set()
+        for hist in historico_matriculas:
+            chave = (hist["serie"], hist["ano_letivo"])
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            registros_complementares.append({
+                "ciclo_serie": hist["serie"], "ano": hist["ano_letivo"],
+                "unidade_escolar": documento["unidade_escolar"] if documento and documento["unidade_escolar"] else get_school_settings(conn)["school_name"],
+                "municipio": documento["municipio"] if documento and documento["municipio"] else "Rondonópolis",
+                "uf": documento["uf"] if documento and documento["uf"] else "MT",
+                "observacao": hist["observacoes"] or ""
+            })
+        for item in historico_externo:
+            chave = (item["serie"], item["ano_letivo"])
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            registros_complementares.append({
+                "ciclo_serie": item["serie"], "ano": item["ano_letivo"],
+                "unidade_escolar": item["escola"], "municipio": item["municipio"],
+                "uf": item["uf"], "observacao": item["observacoes"] or ""
+            })
+
     conn.close()
     return render_template(
         "historico_transferencia.html",
         aluno=aluno, linhas=linhas, historico_matriculas=historico_matriculas,
         historico_externo=historico_externo, documento=documento,
         rendimentos_editaveis=rendimentos_editaveis, registros_editaveis=registros_editaveis,
-        educacao_fisica=educacao_fisica,
+        registros_complementares=registros_complementares, educacao_fisica=educacao_fisica,
+        matriz_historico=matriz_historico, series_historico=series_historico,
     )
 
 
@@ -1450,26 +1546,60 @@ def historico_transferencia_editar(aluno_id):
         )
 
         conn.execute("DELETE FROM historico_rendimentos_editaveis WHERE aluno_id = ?", (aluno_id,))
-        anos = request.form.getlist("rend_ano[]")
-        series = request.form.getlist("rend_serie[]")
-        escolas = request.form.getlist("rend_escola[]")
-        municipios = request.form.getlist("rend_municipio[]")
-        ufs = request.form.getlist("rend_uf[]")
-        disciplinas = request.form.getlist("rend_disciplina[]")
-        notas = request.form.getlist("rend_nota[]")
-        cargas = request.form.getlist("rend_ch[]")
-        faltas = request.form.getlist("rend_faltas[]")
-        resultados = request.form.getlist("rend_resultado[]")
-        total = max(map(len, [anos, series, escolas, municipios, ufs, disciplinas, notas, cargas, faltas, resultados]), default=0)
-        for i in range(total):
-            vals = [lst[i].strip() if i < len(lst) else "" for lst in [anos, series, escolas, municipios, ufs, disciplinas, notas, cargas, faltas, resultados]]
-            if any(vals):
-                conn.execute(
-                    """INSERT INTO historico_rendimentos_editaveis
-                    (aluno_id, ano, serie, escola, municipio, uf, disciplina, nota_conceito, carga_horaria, faltas, resultado, ordem)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (aluno_id, *vals, i)
-                )
+
+        # Nova grade oficial: matérias nas linhas e séries nas colunas.
+        matrix_disciplinas = request.form.getlist("matrix_disciplina[]")
+        if matrix_disciplinas:
+            ordem = 0
+            for row_i, disciplina in enumerate(matrix_disciplinas):
+                disciplina = disciplina.strip()
+                if not disciplina:
+                    continue
+                for serie_i in range(1, 10):
+                    notas = request.form.getlist(f"matrix_nota_{serie_i}[]")
+                    cargas = request.form.getlist(f"matrix_ch_{serie_i}[]")
+                    nota = notas[row_i].strip() if row_i < len(notas) else ""
+                    carga = cargas[row_i].strip() if row_i < len(cargas) else ""
+                    if not nota and not carga:
+                        continue
+                    reg_anos = request.form.getlist("reg_ano[]")
+                    reg_escolas = request.form.getlist("reg_escola[]")
+                    reg_municipios = request.form.getlist("reg_municipio[]")
+                    reg_ufs = request.form.getlist("reg_uf[]")
+                    idx_reg = serie_i - 1
+                    ano = reg_anos[idx_reg].strip() if idx_reg < len(reg_anos) else ""
+                    escola = reg_escolas[idx_reg].strip() if idx_reg < len(reg_escolas) else ""
+                    municipio = reg_municipios[idx_reg].strip() if idx_reg < len(reg_municipios) else ""
+                    uf = reg_ufs[idx_reg].strip() if idx_reg < len(reg_ufs) else ""
+                    conn.execute(
+                        """INSERT INTO historico_rendimentos_editaveis
+                        (aluno_id, ano, serie, escola, municipio, uf, disciplina, nota_conceito, carga_horaria, faltas, resultado, ordem)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?)""",
+                        (aluno_id, ano, f"{serie_i}º Ano", escola, municipio, uf, disciplina, nota, carga, ordem)
+                    )
+                    ordem += 1
+        else:
+            # Compatibilidade com formulários de versões anteriores.
+            anos = request.form.getlist("rend_ano[]")
+            series = request.form.getlist("rend_serie[]")
+            escolas = request.form.getlist("rend_escola[]")
+            municipios = request.form.getlist("rend_municipio[]")
+            ufs = request.form.getlist("rend_uf[]")
+            disciplinas = request.form.getlist("rend_disciplina[]")
+            notas = request.form.getlist("rend_nota[]")
+            cargas = request.form.getlist("rend_ch[]")
+            faltas = request.form.getlist("rend_faltas[]")
+            resultados = request.form.getlist("rend_resultado[]")
+            total = max(map(len, [anos, series, escolas, municipios, ufs, disciplinas, notas, cargas, faltas, resultados]), default=0)
+            for i in range(total):
+                vals = [lst[i].strip() if i < len(lst) else "" for lst in [anos, series, escolas, municipios, ufs, disciplinas, notas, cargas, faltas, resultados]]
+                if any(vals):
+                    conn.execute(
+                        """INSERT INTO historico_rendimentos_editaveis
+                        (aluno_id, ano, serie, escola, municipio, uf, disciplina, nota_conceito, carga_horaria, faltas, resultado, ordem)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (aluno_id, *vals, i)
+                    )
 
         conn.execute("DELETE FROM historico_registros_editaveis WHERE aluno_id = ?", (aluno_id,))
         ciclos = request.form.getlist("reg_ciclo[]")
@@ -1549,8 +1679,29 @@ def historico_transferencia_editar(aluno_id):
             ORDER BY disciplinas.nome
             """, (aluno_id, aluno["turma_id"])
         ).fetchall()
+    # Matriz editável dos anos anteriores. O ano atual continua protegido pelo diário.
+    matriz_manual = {}
+    disciplinas_manuais = set()
+    for item in rendimentos:
+        idx = serie_indice(item["serie"])
+        if not idx or not item["disciplina"]:
+            continue
+        disciplinas_manuais.add(item["disciplina"])
+        matriz_manual[(item["disciplina"].casefold(), idx)] = {"nota": item["nota_conceito"] or "", "ch": item["carga_horaria"] or ""}
+
+    registros_por_serie = {}
+    for item in registros:
+        idx = serie_indice(item["ciclo_serie"])
+        if idx:
+            registros_por_serie[idx] = item
+
     conn.close()
-    return render_template("historico_editar.html", aluno=aluno, documento=documento, rendimentos=rendimentos, registros=registros, educacao_fisica=educacao_fisica, current_rows=current_rows)
+    return render_template(
+        "historico_editar.html", aluno=aluno, documento=documento, rendimentos=rendimentos,
+        registros=registros, educacao_fisica=educacao_fisica, current_rows=current_rows,
+        disciplinas_manuais=sorted(disciplinas_manuais, key=str.casefold), matriz_manual=matriz_manual,
+        registros_por_serie=registros_por_serie, series_historico=[{"indice": i, "label": f"{i}º Ano"} for i in range(1, 10)]
+    )
 
 
 @app.route("/buscar")
