@@ -1525,13 +1525,14 @@ def historico_transferencia_editar(aluno_id):
             "carimbo_texto": request.form.get("carimbo_texto", "").strip(),
             "carga_horaria_anual": request.form.get("carga_horaria_anual", "").strip(),
         }
+        # 20 valores vinculados: aluno_id + 18 campos + usuário responsável.
         conn.execute(
             """
             INSERT INTO historico_documentos
             (aluno_id, unidade_escolar, cnpj, endereco, numero, bairro, municipio, uf, mantenedora,
              codigo_matricula, nacionalidade, turno_atual, observacoes_legais, observacoes_gerais,
              certificado_texto, local_emissao, data_emissao, carimbo_texto, carga_horaria_anual, updated_by, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(aluno_id) DO UPDATE SET
               unidade_escolar=excluded.unidade_escolar, cnpj=excluded.cnpj, endereco=excluded.endereco,
               numero=excluded.numero, bairro=excluded.bairro, municipio=excluded.municipio, uf=excluded.uf,

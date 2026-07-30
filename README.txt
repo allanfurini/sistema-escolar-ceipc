@@ -22,3 +22,9 @@ VERSÃO 6.5
 - Registros complementares separados por série, ano, escola, município e UF.
 - Ano atual continua vindo automaticamente do Diário/Boletim.
 - Upgrade preserva alunos, notas, turmas, matrículas e históricos anteriores.
+
+
+CORREÇÃO V6.5.1
+- Corrige erro 500 ao salvar o histórico escolar editável.
+- Ajusta a quantidade de parâmetros do INSERT/UPDATE de historico_documentos.
+- Não altera nem apaga alunos, notas, matrículas, turmas ou históricos existentes.
