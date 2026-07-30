@@ -1619,20 +1619,8 @@ def historico_transferencia_editar(aluno_id):
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", (aluno_id, *vals, i)
                 )
 
-        conn.execute("DELETE FROM historico_educacao_fisica WHERE aluno_id = ?", (aluno_id,))
-        ef_anos = request.form.getlist("ef_ano[]")
-        ef_series = request.form.getlist("ef_serie[]")
-        ef_aulas = request.form.getlist("ef_aulas[]")
-        ef_freqs = request.form.getlist("ef_frequencia[]")
-        total_ef = max(map(len, [ef_anos, ef_series, ef_aulas, ef_freqs]), default=0)
-        for i in range(total_ef):
-            vals = [lst[i].strip() if i < len(lst) else "" for lst in [ef_anos, ef_series, ef_aulas, ef_freqs]]
-            if any(vals):
-                conn.execute(
-                    """INSERT INTO historico_educacao_fisica
-                    (aluno_id, ano_letivo, serie, aulas_dadas, frequencia, ordem) VALUES (?, ?, ?, ?, ?, ?)""",
-                    (aluno_id, *vals, i)
-                )
+        # A seção específica de Educação Física foi retirada do documento.
+        # Os registros antigos permanecem preservados no banco e não são apagados.
 
         # Atualiza somente a carga horária dos componentes atuais, sem tocar em notas ou anos anteriores.
         current_disciplina_ids = request.form.getlist("current_disciplina_id[]")

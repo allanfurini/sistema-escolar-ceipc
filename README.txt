@@ -28,3 +28,10 @@ CORREÇÃO V6.5.1
 - Corrige erro 500 ao salvar o histórico escolar editável.
 - Ajusta a quantidade de parâmetros do INSERT/UPDATE de historico_documentos.
 - Não altera nem apaga alunos, notas, matrículas, turmas ou históricos existentes.
+
+
+VERSÃO 6.5.2
+- Remove do histórico impresso o quadro de matrícula com datas de início/fim.
+- Remove o quadro separado de Educação Física.
+- Mantém os dados antigos dessas tabelas preservados no banco.
+- Amplia as áreas de observações e certificação no verso.
